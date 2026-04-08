@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+export {}; // mark as a module so top-level `main` doesn't collide with other scripts
 /**
  * Smoke test for Foundry connectivity.
  *
@@ -34,8 +35,8 @@ async function main() {
       messages: [{ role: "user", content: "Si 'hei' på norsk og nevn publikasjonen Atea CIO Analytics i samme setning." }],
     });
     const text = response.content
-      .filter((b): b is { type: "text"; text: string } => b.type === "text")
-      .map((b) => b.text)
+      .filter((b) => b.type === "text")
+      .map((b) => (b as { type: "text"; text: string }).text)
       .join("");
     console.log(`  ✓ ${Date.now() - t1Start}ms`);
     console.log(`  Response: ${text}`);
@@ -62,8 +63,8 @@ async function main() {
       ],
     });
     const text = response.content
-      .filter((b): b is { type: "text"; text: string } => b.type === "text")
-      .map((b) => b.text)
+      .filter((b) => b.type === "text")
+      .map((b) => (b as { type: "text"; text: string }).text)
       .join("");
     console.log(`  ✓ ${Date.now() - t2Start}ms`);
     console.log(`  Response: ${text}`);

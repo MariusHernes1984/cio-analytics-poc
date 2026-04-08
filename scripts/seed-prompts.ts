@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+export {}; // mark as a module so top-level `main` doesn't collide with other scripts
 /**
  * Seed default prompts into the configured PromptStore.
  *

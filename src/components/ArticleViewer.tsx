@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { MarkdownView } from "@/components/MarkdownView";
+import { ArticleReviser } from "@/components/ArticleReviser";
 import { TARGET_LANGUAGE_LABELS, type TargetLanguage } from "@/lib/agents/types";
 import type { StoredArticle } from "@/lib/articles/ArticleStore";
 
@@ -111,7 +112,12 @@ export function ArticleViewer({ article }: { article: StoredArticle }) {
             {activeResult.inputTokens} → {activeResult.outputTokens} tokens
           </>
         )}
+        {tab === "no" && article.revisions && article.revisions.length > 0 && (
+          <>Revisjon #{article.revisions.length + 1} · oppdatert {new Date(article.updatedAt).toLocaleString("nb-NO")}</>
+        )}
       </footer>
+
+      {tab === "no" && <ArticleReviser articleId={article.id} />}
     </div>
   );
 }

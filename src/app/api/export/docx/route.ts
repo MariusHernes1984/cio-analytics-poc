@@ -31,7 +31,9 @@ export async function POST(req: NextRequest) {
   }
 
   const { filename, buffer } = await markdownToDocx(parsed.data.markdown, parsed.data.title);
-  return new Response(buffer, {
+  // Cast: Node 22 Buffer extends Uint8Array but TS 5.7 generic narrowing
+  // breaks the BodyInit assignment. Runtime is fine.
+  return new Response(buffer as unknown as BodyInit, {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "Content-Disposition": `attachment; filename="${filename}"`,

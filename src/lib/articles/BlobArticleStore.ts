@@ -1,7 +1,12 @@
 import { BlobServiceClient, type ContainerClient } from "@azure/storage-blob";
 import { getEnv } from "@/lib/env";
 import type { AgentRunResult, TargetLanguage } from "@/lib/agents/types";
-import type { ArticleListItem, ArticleStore, StoredArticle } from "@/lib/articles/ArticleStore";
+import {
+  extractTitle,
+  type ArticleListItem,
+  type ArticleStore,
+  type StoredArticle,
+} from "@/lib/articles/ArticleStore";
 
 export class BlobArticleStore implements ArticleStore {
   private readonly container: ContainerClient;
@@ -73,6 +78,19 @@ export class BlobArticleStore implements ArticleStore {
     if (!article) throw new Error(`Article ${id} not found`);
     article.translations[language] = result;
     article.updatedAt = new Date().toISOString();
+    await this.save(article);
+  }
+
+  async revise(id: string, newResult: AgentRunResult, feedback: string): Promise<void> {
+    const article = await this.get(id);
+    if (!article) throw new Error(`Article ${id} not found`);
+    const now = new Date().toISOString();
+    const revisions = article.revisions ?? [];
+    revisions.push({ result: article.source, feedback, replacedAt: now });
+    article.revisions = revisions;
+    article.source = newResult;
+    article.title = extractTitle(newResult.markdown, article.title);
+    article.updatedAt = now;
     await this.save(article);
   }
 }

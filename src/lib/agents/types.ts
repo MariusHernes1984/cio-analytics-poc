@@ -29,6 +29,19 @@ export interface WriterInput {
   promptVersion?: string;
 }
 
+/**
+ * Input for the reviser: produces a new version of an existing article
+ * based on user feedback. Reuses the writer system prompt — the house
+ * style, structure, and tone rules still apply — but feeds the current
+ * article and feedback as the user message instead of brief + research.
+ */
+export interface ReviserInput {
+  articleId: string;
+  currentMarkdown: string;
+  feedback: string;
+  promptVersion?: string;
+}
+
 export interface GlossaryEntry {
   source: string;
   target: string;

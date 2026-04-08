@@ -93,8 +93,8 @@ function renderMarkdown(md: string): string {
       flushPara();
       closeList();
       closeBlockquote();
-      const level = h[1].length;
-      out.push(`<h${level}>${renderInline(h[2])}</h${level}>`);
+      const level = h[1]!.length;
+      out.push(`<h${level}>${renderInline(h[2]!)}</h${level}>`);
       continue;
     }
 
@@ -107,7 +107,7 @@ function renderMarkdown(md: string): string {
         out.push("<ul>");
         inList = "ul";
       }
-      out.push(`<li>${renderInline(ul[1])}</li>`);
+      out.push(`<li>${renderInline(ul[1]!)}</li>`);
       continue;
     }
 
@@ -120,7 +120,7 @@ function renderMarkdown(md: string): string {
         out.push("<ol>");
         inList = "ol";
       }
-      out.push(`<li>${renderInline(ol[1])}</li>`);
+      out.push(`<li>${renderInline(ol[1]!)}</li>`);
       continue;
     }
 
@@ -132,7 +132,7 @@ function renderMarkdown(md: string): string {
         out.push("<blockquote>");
         inBlockquote = true;
       }
-      out.push(`<p>${renderInline(bq[1])}</p>`);
+      out.push(`<p>${renderInline(bq[1]!)}</p>`);
       continue;
     }
 

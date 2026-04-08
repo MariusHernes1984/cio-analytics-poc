@@ -1,17 +1,26 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * HTTP Basic Auth gate for the PoC.
+ * PoC auth gate: query-param login + cookie.
  *
  * - If POC_PASSWORD env var is NOT set → no auth (dev mode).
- * - If POC_PASSWORD is set → every request must carry a Basic Auth header
- *   with ANY username and that exact password. Browsers handle this natively.
+ * - Otherwise: first visit must include `?pw=<password>`. On match, middleware
+ *   sets an HttpOnly/Secure cookie and redirects to the same URL without the
+ *   pw param. Subsequent visits just check the cookie.
  *
- * No cookies, no sessions, no login page, no IP-allowlist. Literally one
- * env var. Roll to Entra ID later by replacing this file and
+ * Why not HTTP Basic Auth: Chrome under some enterprise group policies (Atea's
+ * included) suppresses the native Basic Auth prompt entirely, so users see a
+ * blank "Unauthorized" page with no way to log in. Query param + cookie
+ * sidesteps the browser's auth UI completely.
+ *
+ * No sessions, no server-side state, no login page: the cookie value is just
+ * the password base64-encoded, and every request compares it in constant time.
+ * Roll to Entra ID later by replacing this file and
  * src/lib/auth/requireSession.ts.
  */
 const PUBLIC_PATHS = ["/api/health"];
+const COOKIE_NAME = "poc_auth";
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 export function middleware(req: NextRequest) {
   const password = process.env.POC_PASSWORD;
@@ -25,32 +34,50 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader?.startsWith("Basic ")) {
-    return unauthorized();
-  }
-
-  try {
-    const decoded = atob(authHeader.slice(6));
-    const idx = decoded.indexOf(":");
-    const provided = idx === -1 ? decoded : decoded.slice(idx + 1);
-    if (!constantTimeEqual(provided, password)) {
-      return unauthorized();
+  // First-visit login via ?pw=<password>: set cookie, strip param, redirect
+  const pwParam = req.nextUrl.searchParams.get("pw");
+  if (pwParam !== null) {
+    if (!constantTimeEqual(pwParam, password)) {
+      return new NextResponse("Ugyldig passord", { status: 401 });
     }
-  } catch {
-    return unauthorized();
+    const cleanUrl = req.nextUrl.clone();
+    cleanUrl.searchParams.delete("pw");
+    const res = NextResponse.redirect(cleanUrl);
+    res.cookies.set(COOKIE_NAME, encodeCookie(password), {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: COOKIE_MAX_AGE,
+    });
+    return res;
   }
 
-  return NextResponse.next();
+  // Subsequent visits: check cookie
+  const cookie = req.cookies.get(COOKIE_NAME)?.value;
+  if (cookie && constantTimeEqual(decodeCookie(cookie), password)) {
+    return NextResponse.next();
+  }
+
+  // No valid cookie → prompt user to append ?pw=
+  return new NextResponse(
+    "Ikke innlogget. Legg til ?pw=<passord> i URL-en for å logge inn.",
+    { status: 401, headers: { "Content-Type": "text/plain; charset=utf-8" } },
+  );
 }
 
-function unauthorized(): NextResponse {
-  return new NextResponse("Unauthorized", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": 'Basic realm="CIO Analytics PoC", charset="UTF-8"',
-    },
-  });
+// btoa/atob are available in the Edge Runtime where middleware runs.
+// They're ASCII-only, which is fine for the password charset we use.
+function encodeCookie(value: string): string {
+  return btoa(value);
+}
+
+function decodeCookie(value: string): string {
+  try {
+    return atob(value);
+  } catch {
+    return "";
+  }
 }
 
 /** Constant-time string comparison to avoid timing attacks. */

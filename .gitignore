@@ -38,3 +38,6 @@ coverage/
 
 # Azure / azd
 .azure/
+
+# deploy zip built by scripts/make-deploy-zip.ps1
+deploy.zip

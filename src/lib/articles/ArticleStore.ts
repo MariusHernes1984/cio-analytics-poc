@@ -5,10 +5,22 @@ import type { AgentRunResult, TargetLanguage } from "@/lib/agents/types";
  * Same pattern as PromptStore: interface + two impls + factory.
  */
 
+/**
+ * A previous version of the article that was replaced by a revision.
+ * The `feedback` is the text the user gave to produce the NEXT version.
+ */
+export interface ArticleRevision {
+  result: AgentRunResult;
+  feedback: string;
+  replacedAt: string;
+}
+
 export interface StoredArticle {
   id: string;
   title: string; // extracted from first H1 of markdown, or topic fallback
-  source: AgentRunResult; // the original writer result
+  source: AgentRunResult; // the LATEST writer result (may be a revision)
+  /** Prior versions, oldest first. Empty on freshly-generated articles. */
+  revisions?: ArticleRevision[];
   translations: Partial<Record<TargetLanguage, AgentRunResult>>;
   createdAt: string;
   updatedAt: string;
@@ -29,6 +41,12 @@ export interface ArticleStore {
   get(id: string): Promise<StoredArticle | null>;
   list(): Promise<ArticleListItem[]>;
   attachTranslation(id: string, language: TargetLanguage, result: AgentRunResult): Promise<void>;
+  /**
+   * Replace the article's source with a new result produced from user feedback.
+   * Previous source is pushed into `revisions`. Translations are preserved —
+   * caller/UI is responsible for prompting the user to re-translate if needed.
+   */
+  revise(id: string, newResult: AgentRunResult, feedback: string): Promise<void>;
 }
 
 let cached: ArticleStore | null = null;

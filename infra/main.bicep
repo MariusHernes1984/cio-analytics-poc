@@ -123,13 +123,17 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 }
 
 // --- App Service ---
+// Note: B1 Linux is listed as available in Sweden Central but fails to
+// provision for this subscription ("Requested features are not supported").
+// P0v3 is the next step up and works in swedencentral — similar price,
+// better perf, and streaming-friendly.
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: appServicePlanName
   location: location
   tags: tags
   sku: {
-    name: 'B1'
-    tier: 'Basic'
+    name: 'P0v3'
+    tier: 'Premium0V3'
   }
   kind: 'linux'
   properties: {

@@ -66,6 +66,19 @@ export class LocalArticleStore implements ArticleStore {
     article.updatedAt = new Date().toISOString();
     await this.save(article);
   }
+
+  async revise(id: string, newResult: AgentRunResult, feedback: string): Promise<void> {
+    const article = await this.get(id);
+    if (!article) throw new Error(`Article ${id} not found`);
+    const now = new Date().toISOString();
+    const revisions = article.revisions ?? [];
+    revisions.push({ result: article.source, feedback, replacedAt: now });
+    article.revisions = revisions;
+    article.source = newResult;
+    article.title = extractTitle(newResult.markdown, article.title);
+    article.updatedAt = now;
+    await this.save(article);
+  }
 }
 
 // Re-export helper for convenience
