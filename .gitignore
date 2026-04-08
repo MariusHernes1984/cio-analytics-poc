@@ -1,0 +1,40 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+
+# next.js
+.next/
+out/
+build/
+dist/
+next-env.d.ts
+
+# misc
+*.log
+.DS_Store
+*.pem
+coverage/
+.nyc_output/
+
+# env files — never commit secrets
+.env
+.env.local
+.env.*.local
+
+# local prompt/article storage for dev
+.local-prompts/
+.local-articles/
+.azurite/
+
+# typescript
+*.tsbuildinfo
+
+# editor
+.vscode/
+.idea/
+*.swp
+
+# Azure / azd
+.azure/

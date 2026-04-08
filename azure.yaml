@@ -1,0 +1,31 @@
+# Azure Developer CLI (azd) configuration.
+#
+# Run `azd up` from the project root to:
+#   1. Provision all infra defined in infra/main.bicep
+#   2. Build the Next.js app (npm run build)
+#   3. Deploy the compiled app to App Service
+#
+# First-time setup: `azd auth login`, then `azd env new <name>` to create an
+# environment, then `azd env set FOUNDRY_RESOURCE <name>`, `azd env set FOUNDRY_API_KEY <key>`,
+# `azd env set POC_PASSWORD <pass>`, finally `azd up`.
+
+name: cio-analytics
+metadata:
+  template: cio-analytics-poc@0.1.0
+
+infra:
+  provider: bicep
+  path: infra
+  module: main
+
+services:
+  web:
+    project: .
+    host: appservice
+    language: js
+    # Deploy the repo as-is. Oryx on App Service Linux auto-detects Next.js,
+    # runs `npm ci && npm run build`, and starts via `npm start`. This keeps
+    # the PoC deploy-flow simple — no post-build copy steps, no standalone
+    # output wrangling. Tradeoff: slightly larger deploy zip and slower first
+    # boot. Acceptable for PoC scale.
+    dist: .

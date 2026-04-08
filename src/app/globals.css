@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background-color: #f5f3ee; /* atea-sand */
+  color: #1a1a1a; /* atea-ink */
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Minimal prose styles for rendered markdown (article view, streaming panes) */
+.prose-cio {
+  max-width: 68ch;
+  line-height: 1.65;
+  font-size: 1rem;
+  color: #1a1a1a;
+}
+
+.prose-cio h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #0a1f44;
+}
+
+.prose-cio h2 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  color: #0a1f44;
+}
+
+.prose-cio h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #0a1f44;
+}
+
+.prose-cio p {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-cio ul,
+.prose-cio ol {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding-left: 1.5rem;
+}
+
+.prose-cio ul {
+  list-style: disc;
+}
+
+.prose-cio ol {
+  list-style: decimal;
+}
+
+.prose-cio li {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.prose-cio blockquote {
+  border-left: 4px solid #e2231a;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #333;
+}
+
+.prose-cio a {
+  color: #0a1f44;
+  text-decoration: underline;
+}
+
+.prose-cio code {
+  background: #eee;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 0.9em;
+}
+
+.prose-cio strong {
+  font-weight: 700;
+}
+
+.prose-cio em {
+  font-style: italic;
+}
+
+/* Streaming cursor indicator */
+.streaming-cursor::after {
+  content: "▊";
+  display: inline-block;
+  animation: blink 1s steps(2) infinite;
+  color: #e2231a;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}

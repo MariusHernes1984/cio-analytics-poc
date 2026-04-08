@@ -1,0 +1,352 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { MarkdownView } from "@/components/MarkdownView";
+import { streamSse } from "@/lib/sseClient";
+import type { ResearchMaterial } from "@/lib/agents/types";
+
+type RunStatus = "idle" | "streaming" | "done" | "error";
+
+interface RunMeta {
+  model?: string;
+  promptVersion?: string;
+  articleId?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  durationMs?: number;
+  warnings?: string[];
+}
+
+const RESEARCH_KINDS: Array<{ value: ResearchMaterial["kind"]; label: string }> = [
+  { value: "transcript", label: "Intervju-transkripsjon" },
+  { value: "survey-data", label: "Survey-data" },
+  { value: "notes", label: "Notater" },
+  { value: "reference-article", label: "Referanse-artikkel" },
+];
+
+export function WriterForm() {
+  const router = useRouter();
+
+  const [topic, setTopic] = useState("");
+  const [brief, setBrief] = useState("");
+  const [targetLengthWords, setTargetLengthWords] = useState(750);
+  const [styleNotes, setStyleNotes] = useState("");
+  const [research, setResearch] = useState<ResearchMaterial[]>([]);
+
+  const [status, setStatus] = useState<RunStatus>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [markdown, setMarkdown] = useState("");
+  const [meta, setMeta] = useState<RunMeta>({});
+  const abortRef = useRef<AbortController | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (status === "streaming") return;
+
+    setStatus("streaming");
+    setErrorMessage(null);
+    setMarkdown("");
+    setMeta({});
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      await streamSse({
+        url: "/api/write",
+        body: {
+          topic,
+          brief,
+          targetLengthWords,
+          researchMaterial: research.length > 0 ? research : undefined,
+          styleNotes: styleNotes || undefined,
+        },
+        signal: controller.signal,
+        onEvent(ev) {
+          if (ev.type === "start") {
+            setMeta((m) => ({ ...m, model: ev.model, promptVersion: ev.promptVersion }));
+          } else if (ev.type === "delta") {
+            setMarkdown((prev) => prev + ev.text);
+          } else if (ev.type === "done") {
+            const r = ev.result as
+              | {
+                  articleId: string;
+                  inputTokens: number;
+                  outputTokens: number;
+                  durationMs: number;
+                  warnings: string[];
+                }
+              | undefined;
+            setMeta((m) => ({
+              ...m,
+              articleId: r?.articleId,
+              inputTokens: r?.inputTokens,
+              outputTokens: r?.outputTokens,
+              durationMs: r?.durationMs,
+              warnings: r?.warnings,
+            }));
+            setStatus("done");
+          } else if (ev.type === "error") {
+            setErrorMessage(ev.message);
+            setStatus("error");
+          }
+        },
+      });
+    } catch (err) {
+      if ((err as Error).name === "AbortError") {
+        setStatus("idle");
+        return;
+      }
+      setErrorMessage((err as Error).message);
+      setStatus("error");
+    }
+  }
+
+  function cancel() {
+    abortRef.current?.abort();
+  }
+
+  function addResearch() {
+    setResearch((r) => [...r, { kind: "transcript", label: "", content: "" }]);
+  }
+  function updateResearch(idx: number, patch: Partial<ResearchMaterial>) {
+    setResearch((r) => r.map((item, i) => (i === idx ? { ...item, ...patch } : item)));
+  }
+  function removeResearch(idx: number) {
+    setResearch((r) => r.filter((_, i) => i !== idx));
+  }
+
+  const canOpenArticle = status === "done" && meta.articleId;
+
+  return (
+    <div className="grid gap-8 lg:grid-cols-[420px_1fr]">
+      <form onSubmit={submit} className="space-y-5">
+        <Field label="Tema" required>
+          <input
+            type="text"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="Hvordan norske CIO-er prioriterer AI-investeringer i 2026"
+            className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm"
+            required
+            minLength={5}
+            maxLength={200}
+          />
+        </Field>
+
+        <Field label="Brief (vinkel og lesersmerte)" required>
+          <textarea
+            value={brief}
+            onChange={(e) => setBrief(e.target.value)}
+            placeholder="Hva er vinkelen? Hvilket problem løser artikkelen for IT-lederen?"
+            className="min-h-[120px] w-full rounded border border-black/15 bg-white px-3 py-2 text-sm"
+            required
+            minLength={50}
+            maxLength={5000}
+          />
+          <div className="mt-1 text-[11px] text-black/40">{brief.length}/5000</div>
+        </Field>
+
+        <Field label="Mål-lengde (ord)">
+          <input
+            type="number"
+            min={300}
+            max={2000}
+            value={targetLengthWords}
+            onChange={(e) => setTargetLengthWords(parseInt(e.target.value || "750", 10))}
+            className="w-32 rounded border border-black/15 bg-white px-3 py-2 text-sm"
+          />
+          <span className="ml-2 text-[11px] text-black/50">Standard: 750</span>
+        </Field>
+
+        <Field label="Stil-notater (valgfritt)">
+          <textarea
+            value={styleNotes}
+            onChange={(e) => setStyleNotes(e.target.value)}
+            placeholder="F.eks. unngå buzzwords, legg vekt på konkrete tall..."
+            className="min-h-[70px] w-full rounded border border-black/15 bg-white px-3 py-2 text-sm"
+            maxLength={2000}
+          />
+        </Field>
+
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-black/60">
+              Researchmateriale
+            </span>
+            <button
+              type="button"
+              onClick={addResearch}
+              className="rounded border border-black/15 bg-white px-2 py-1 text-[11px] font-medium text-atea-navy hover:bg-atea-sand"
+            >
+              + Legg til
+            </button>
+          </div>
+          {research.length === 0 && (
+            <div className="rounded border border-dashed border-black/15 bg-white/50 p-3 text-[11px] text-black/40">
+              Ingen researchmateriale lagt til. Writer vil skrive kun fra brief.
+            </div>
+          )}
+          {research.map((item, idx) => (
+            <div key={idx} className="mb-2 space-y-2 rounded border border-black/10 bg-white p-3">
+              <div className="flex items-center gap-2">
+                <select
+                  value={item.kind}
+                  onChange={(e) =>
+                    updateResearch(idx, { kind: e.target.value as ResearchMaterial["kind"] })
+                  }
+                  className="rounded border border-black/15 bg-white px-2 py-1 text-xs"
+                >
+                  {RESEARCH_KINDS.map((k) => (
+                    <option key={k.value} value={k.value}>
+                      {k.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={item.label}
+                  onChange={(e) => updateResearch(idx, { label: e.target.value })}
+                  placeholder="Kort merkelapp"
+                  className="flex-1 rounded border border-black/15 bg-white px-2 py-1 text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeResearch(idx)}
+                  className="text-[11px] text-black/40 hover:text-atea-red"
+                >
+                  Fjern
+                </button>
+              </div>
+              <textarea
+                value={item.content}
+                onChange={(e) => updateResearch(idx, { content: e.target.value })}
+                placeholder="Lim inn innholdet her…"
+                className="min-h-[80px] w-full rounded border border-black/15 bg-white px-2 py-1 text-xs font-mono"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2 pt-2">
+          <button
+            type="submit"
+            disabled={status === "streaming"}
+            className="rounded bg-atea-navy px-4 py-2 text-sm font-semibold text-white hover:bg-atea-navy/90 disabled:opacity-50"
+          >
+            {status === "streaming" ? "Genererer…" : "Generer artikkel"}
+          </button>
+          {status === "streaming" && (
+            <button
+              type="button"
+              onClick={cancel}
+              className="rounded border border-black/15 bg-white px-4 py-2 text-sm text-black/70 hover:bg-atea-sand"
+            >
+              Avbryt
+            </button>
+          )}
+          {canOpenArticle && (
+            <button
+              type="button"
+              onClick={() => router.push(`/articles/${meta.articleId}`)}
+              className="ml-auto rounded bg-atea-red px-4 py-2 text-sm font-semibold text-white hover:bg-atea-red/90"
+            >
+              Åpne artikkel →
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div className="min-h-[400px] rounded-lg border border-black/10 bg-white p-6">
+        <div className="mb-3 flex items-center justify-between border-b border-black/10 pb-3">
+          <div className="text-xs font-semibold uppercase tracking-wider text-black/60">
+            Utkast
+          </div>
+          <StatusBadge
+            status={status}
+            model={meta.model}
+            promptVersion={meta.promptVersion}
+          />
+        </div>
+
+        {status === "idle" && !markdown && (
+          <div className="flex h-64 items-center justify-center text-sm text-black/30">
+            Fyll ut skjemaet og klikk «Generer artikkel».
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="mb-3 rounded bg-red-50 px-3 py-2 text-sm text-red-700">
+            Feil: {errorMessage}
+          </div>
+        )}
+
+        {markdown && <MarkdownView markdown={markdown} streaming={status === "streaming"} />}
+
+        {status === "done" && (
+          <footer className="mt-6 border-t border-black/10 pt-3 text-[11px] text-black/50">
+            Ferdig · {meta.inputTokens} → {meta.outputTokens} tokens ·{" "}
+            {meta.durationMs ? `${(meta.durationMs / 1000).toFixed(1)}s` : "—"}
+            {meta.warnings && meta.warnings.length > 0 && (
+              <div className="mt-2 rounded bg-amber-50 px-2 py-1 text-amber-800">
+                ⚠ {meta.warnings.join(" · ")}
+              </div>
+            )}
+          </footer>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-black/60">
+        {label}
+        {required && <span className="text-atea-red">*</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function StatusBadge({
+  status,
+  model,
+  promptVersion,
+}: {
+  status: RunStatus;
+  model?: string;
+  promptVersion?: string;
+}) {
+  if (status === "idle") return null;
+  const label: Record<Exclude<RunStatus, "idle">, string> = {
+    streaming: "Streaming",
+    done: "Ferdig",
+    error: "Feil",
+  };
+  const colors: Record<Exclude<RunStatus, "idle">, string> = {
+    streaming: "bg-atea-navy/10 text-atea-navy",
+    done: "bg-green-100 text-green-800",
+    error: "bg-red-100 text-red-800",
+  };
+  return (
+    <div className="flex items-center gap-2 text-[11px]">
+      <span className={`rounded px-2 py-0.5 font-semibold ${colors[status]}`}>
+        {label[status]}
+      </span>
+      {model && <span className="text-black/50">{model}</span>}
+      {promptVersion && <span className="text-black/30">· {promptVersion}</span>}
+    </div>
+  );
+}
