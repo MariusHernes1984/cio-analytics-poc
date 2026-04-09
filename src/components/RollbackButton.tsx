@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { AgentId } from "@/lib/agents/types";
 
 export function RollbackButton({
@@ -14,10 +15,11 @@ export function RollbackButton({
   isCurrent: boolean;
 }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [isRolling, setIsRolling] = useState(false);
 
   async function rollback() {
-    if (!confirm(`Sette ${version} som gjeldende versjon?`)) return;
+    if (!confirm(`${t("rollback.setAsCurrent")} ${version}?`)) return;
     setIsRolling(true);
     try {
       const res = await fetch(`/api/prompts/${agent}`, {
@@ -31,7 +33,7 @@ export function RollbackButton({
       }
       router.refresh();
     } catch (err) {
-      alert(`Rollback feilet: ${(err as Error).message}`);
+      alert(`${t("rollback.failed")} ${(err as Error).message}`);
     } finally {
       setIsRolling(false);
     }
@@ -40,7 +42,7 @@ export function RollbackButton({
   if (isCurrent) {
     return (
       <span className="rounded bg-atea-green px-2 py-1 text-[10px] font-semibold uppercase text-white">
-        Gjeldende
+        {t("rollback.current")}
       </span>
     );
   }
@@ -50,7 +52,7 @@ export function RollbackButton({
       disabled={isRolling}
       className="rounded border border-black/15 bg-white px-3 py-1 text-[11px] text-atea-navy hover:bg-atea-sand disabled:opacity-50"
     >
-      {isRolling ? "…" : "Sett som gjeldende"}
+      {isRolling ? "…" : t("rollback.setAsCurrent")}
     </button>
   );
 }

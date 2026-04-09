@@ -2,11 +2,15 @@ import Link from "next/link";
 import { getArticleStore } from "@/lib/articles/ArticleStore";
 import { TARGET_LANGUAGE_LABELS } from "@/lib/agents/types";
 import { requireSession } from "@/lib/auth/requireSession";
+import { t } from "@/lib/i18n/translations";
+import { getServerLang } from "@/lib/i18n/getServerLang";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
+  const lang = await getServerLang();
+
   const session = await requireSession();
   if (!session.ok) {
     return (
@@ -21,48 +25,47 @@ export default async function DashboardPage() {
     <div className="mx-auto max-w-5xl px-10 py-10">
       <header className="mb-10">
         <div className="text-xs font-semibold uppercase tracking-wider text-atea-red">
-          Dashboard
+          {t("dashboard.section", lang)}
         </div>
         <h1 className="mt-1 text-3xl font-bold text-atea-navy">CIO Analytics · AI Studio</h1>
         <p className="mt-2 max-w-2xl text-sm text-black/60">
-          Skriv nye norske CIO Analytics-artikler og oversett eksisterende artikler til engelsk,
-          svensk, dansk og finsk. Alle prompts kan redigeres live uten redeploy.
+          {t("dashboard.description", lang)}
         </p>
       </header>
 
       <section className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <CtaCard
           href="/write"
-          title="Skriv ny artikkel"
-          description="Brief + researchmateriale → 600–900 ord norsk case-study."
+          title={t("dashboard.ctaWriteTitle", lang)}
+          description={t("dashboard.ctaWriteDesc", lang)}
           accent="primary"
         />
         <CtaCard
           href="/translate"
-          title="Oversett artikkel"
-          description="Parallell oversettelse til en, sv, da, fi — med executive-register."
+          title={t("dashboard.ctaTranslateTitle", lang)}
+          description={t("dashboard.ctaTranslateDesc", lang)}
           accent="secondary"
         />
         <CtaCard
           href="/prompts"
-          title="Rediger agenter"
-          description="Endre system-prompts, modell og temperatur — ingen redeploy."
+          title={t("dashboard.ctaPromptsTitle", lang)}
+          description={t("dashboard.ctaPromptsDesc", lang)}
           accent="ghost"
         />
       </section>
 
       <section>
         <div className="mb-3 flex items-end justify-between">
-          <h2 className="text-lg font-semibold text-atea-navy">Siste artikler</h2>
+          <h2 className="text-lg font-semibold text-atea-navy">{t("dashboard.recentArticles", lang)}</h2>
           <Link href="/articles" className="text-xs text-atea-navy underline hover:text-atea-red">
-            Se alle →
+            {t("dashboard.viewAll", lang)}
           </Link>
         </div>
         {items.length === 0 ? (
           <div className="rounded-lg border border-dashed border-black/15 bg-white/50 p-10 text-center text-sm text-black/50">
-            Ingen artikler ennå.{" "}
+            {t("dashboard.noArticles", lang)}{" "}
             <Link href="/write" className="text-atea-navy underline hover:text-atea-red">
-              Skriv den første
+              {t("dashboard.writeFirst", lang)}
             </Link>
             .
           </div>
@@ -83,15 +86,15 @@ export default async function DashboardPage() {
                   </div>
                   <div className="flex shrink-0 gap-1">
                     {item.languages.length === 0 ? (
-                      <span className="text-[10px] text-black/30">Kun NO</span>
+                      <span className="text-[10px] text-black/30">{t("dashboard.noOnly", lang)}</span>
                     ) : (
-                      item.languages.map((lang) => (
+                      item.languages.map((lng) => (
                         <span
-                          key={lang}
-                          title={TARGET_LANGUAGE_LABELS[lang]}
+                          key={lng}
+                          title={TARGET_LANGUAGE_LABELS[lng]}
                           className="rounded bg-atea-navy/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-atea-navy"
                         >
-                          {lang}
+                          {lng}
                         </span>
                       ))
                     )}

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { MarkdownView } from "@/components/MarkdownView";
 import { streamSse } from "@/lib/sseClient";
+import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import {
   TARGET_LANGUAGE_LABELS,
   type TargetLanguage,
@@ -32,6 +33,7 @@ const emptyLangState = (): LangState => ({ status: "idle", markdown: "" });
 export function TranslatorForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { t } = useTranslation();
   const preselectedArticleId = searchParams.get("articleId");
 
   const [mode, setMode] = useState<Mode>(preselectedArticleId ? "saved" : "paste");
@@ -160,11 +162,11 @@ export function TranslatorForm() {
     e.preventDefault();
     if (isRunning) return;
     if (!sourceMarkdown || sourceMarkdown.length < 10) {
-      alert("Velg eller lim inn en artikkel først.");
+      alert(t("translator.selectFirst"));
       return;
     }
     if (selectedLangs.length === 0) {
-      alert("Velg minst ett målspråk.");
+      alert(t("translator.selectLanguage"));
       return;
     }
 
@@ -192,10 +194,10 @@ export function TranslatorForm() {
       <div className="rounded-lg border border-black/10 bg-white p-4">
         <div className="mb-3 flex gap-2">
           <ModeButton active={mode === "saved"} onClick={() => setMode("saved")}>
-            Velg fra lagret
+            {t("translator.selectSaved")}
           </ModeButton>
           <ModeButton active={mode === "paste"} onClick={() => setMode("paste")}>
-            Lim inn markdown
+            {t("translator.pasteMarkdown")}
           </ModeButton>
         </div>
 
@@ -206,7 +208,7 @@ export function TranslatorForm() {
               onChange={(e) => setSelectedArticleId(e.target.value || null)}
               className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm"
             >
-              <option value="">— Velg artikkel —</option>
+              <option value="">{t("translator.selectArticle")}</option>
               {articles.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.title}
@@ -218,12 +220,12 @@ export function TranslatorForm() {
               <div className="rounded bg-atea-sand p-3 text-xs text-black/60">
                 <div className="font-semibold text-atea-navy">{selectedArticle.title}</div>
                 <div className="mt-0.5 text-[11px]">
-                  {selectedArticle.source.markdown.length.toLocaleString("nb-NO")} tegn ·{" "}
+                  {selectedArticle.source.markdown.length.toLocaleString("nb-NO")} {t("translator.chars")} ·{" "}
                   {selectedArticle.source.model} · prompt {selectedArticle.source.promptVersion}
                 </div>
                 {Object.keys(selectedArticle.translations).length > 0 && (
                   <div className="mt-1 text-[11px]">
-                    Allerede oversatt:{" "}
+                    {t("translator.alreadyTranslated")}{" "}
                     <strong>
                       {Object.keys(selectedArticle.translations)
                         .map((l) => TARGET_LANGUAGE_LABELS[l as TargetLanguage])
@@ -238,7 +240,7 @@ export function TranslatorForm() {
           <textarea
             value={pastedMarkdown}
             onChange={(e) => setPastedMarkdown(e.target.value)}
-            placeholder="Lim inn norsk markdown her…"
+            placeholder={t("translator.pasteHere")}
             className="min-h-[200px] w-full rounded border border-black/15 bg-white px-3 py-2 font-mono text-xs"
           />
         )}
@@ -247,7 +249,7 @@ export function TranslatorForm() {
       {/* Target languages */}
       <div className="rounded-lg border border-black/10 bg-white p-4">
         <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-black/60">
-          Målspråk
+          {t("translator.targetLanguages")}
         </div>
         <div className="flex flex-wrap gap-2">
           {ALL_LANGS.map((lang) => (
@@ -275,34 +277,33 @@ export function TranslatorForm() {
       <div className="rounded-lg border border-black/10 bg-white p-4">
         <div className="mb-3 flex items-center justify-between">
           <div className="text-xs font-semibold uppercase tracking-wider text-black/60">
-            Glossar (valgfritt)
+            {t("translator.glossary")}
           </div>
           <button
             type="button"
             onClick={addGlossary}
             className="rounded border border-black/15 px-2 py-1 text-[11px] font-medium text-atea-navy hover:bg-atea-sand"
           >
-            + Ny term
+            {t("translator.newTerm")}
           </button>
         </div>
         {glossary.length === 0 && (
           <div className="text-[11px] text-black/40">
-            Legg til Atea-spesifikke termer som ikke skal oversettes, eller termer med fast
-            oversettelse.
+            {t("translator.glossaryHint")}
           </div>
         )}
         {glossary.map((entry, idx) => (
           <div key={idx} className="mb-2 flex gap-2">
             <input
               type="text"
-              placeholder="Norsk kildeterm"
+              placeholder={t("translator.sourceTerm")}
               value={entry.source}
               onChange={(e) => updateGlossary(idx, { source: e.target.value })}
               className="flex-1 rounded border border-black/15 bg-white px-2 py-1 text-xs"
             />
             <input
               type="text"
-              placeholder="Oversettelse"
+              placeholder={t("translator.translation")}
               value={entry.target}
               onChange={(e) => updateGlossary(idx, { target: e.target.value })}
               className="flex-1 rounded border border-black/15 bg-white px-2 py-1 text-xs"
@@ -312,7 +313,7 @@ export function TranslatorForm() {
               onClick={() => removeGlossary(idx)}
               className="text-[11px] text-black/40 hover:text-atea-red"
             >
-              Fjern
+              {t("common.remove")}
             </button>
           </div>
         ))}
@@ -326,8 +327,8 @@ export function TranslatorForm() {
           className="rounded bg-atea-green px-5 py-2 text-sm font-semibold text-white hover:bg-atea-green/90 disabled:opacity-50"
         >
           {isRunning
-            ? `Oversetter til ${selectedLangs.length} språk…`
-            : `Oversett til ${selectedLangs.length} språk`}
+            ? `${t("common.streaming")}…`
+            : `${t("translate.section")} (${selectedLangs.length})`}
         </button>
         {isRunning && (
           <button
@@ -335,7 +336,7 @@ export function TranslatorForm() {
             onClick={cancelAll}
             className="rounded border border-black/15 bg-white px-4 py-2 text-sm text-black/70 hover:bg-atea-sand"
           >
-            Avbryt alle
+            {t("translator.cancelAll")}
           </button>
         )}
         {mode === "saved" && selectedArticleId && (
@@ -343,7 +344,7 @@ export function TranslatorForm() {
             href={`/articles/${selectedArticleId}`}
             className="ml-auto text-xs text-atea-navy underline hover:text-atea-red"
           >
-            Se artikkel →
+            {t("translator.viewArticle")}
           </Link>
         )}
       </div>
@@ -385,6 +386,8 @@ function ModeButton({
 }
 
 function LanguagePane({ language, state }: { language: TargetLanguage; state: LangState }) {
+  const { t } = useTranslation();
+
   return (
     <div className="overflow-hidden rounded-lg border border-black/10 bg-white">
       <div className="flex items-center justify-between border-b border-black/10 bg-atea-sand px-4 py-2">
@@ -393,11 +396,11 @@ function LanguagePane({ language, state }: { language: TargetLanguage; state: La
       </div>
       <div className="max-h-[500px] overflow-y-auto p-5">
         {state.status === "idle" && (
-          <div className="text-xs text-black/30">Venter…</div>
+          <div className="text-xs text-black/30">{t("common.waiting")}…</div>
         )}
         {state.error && (
           <div className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">
-            Feil: {state.error}
+            {t("common.errorPrefix")} {state.error}
           </div>
         )}
         {state.markdown && (
@@ -419,12 +422,14 @@ function LanguagePane({ language, state }: { language: TargetLanguage; state: La
 }
 
 function StatusPill({ status }: { status: LangStatus }) {
+  const { t } = useTranslation();
+
   if (status === "idle")
-    return <span className="text-[10px] text-black/40">Venter</span>;
+    return <span className="text-[10px] text-black/40">{t("common.waiting")}</span>;
   const config: Record<Exclude<LangStatus, "idle">, { label: string; cls: string }> = {
-    streaming: { label: "Streaming", cls: "bg-atea-navy/10 text-atea-navy" },
-    done: { label: "Ferdig", cls: "bg-green-100 text-green-800" },
-    error: { label: "Feil", cls: "bg-red-100 text-red-800" },
+    streaming: { label: t("common.streaming"), cls: "bg-atea-navy/10 text-atea-navy" },
+    done: { label: t("common.done"), cls: "bg-green-100 text-green-800" },
+    error: { label: t("common.error"), cls: "bg-red-100 text-red-800" },
   };
   const c = config[status];
   return (

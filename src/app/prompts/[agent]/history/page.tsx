@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getPromptStore } from "@/lib/prompts/PromptStore";
 import { RollbackButton } from "@/components/RollbackButton";
 import { requireSession } from "@/lib/auth/requireSession";
+import { t } from "@/lib/i18n/translations";
+import { getServerLang } from "@/lib/i18n/getServerLang";
 import type { AgentId } from "@/lib/agents/types";
 
 export const runtime = "nodejs";
@@ -20,6 +22,7 @@ export default async function PromptHistoryPage({
     return <div className="p-10 text-sm text-red-700">Unauthorized.</div>;
   }
 
+  const lang = await getServerLang();
   const { agent: agentRaw } = await params;
   if (!VALID_AGENTS.includes(agentRaw as AgentId)) notFound();
   const agent = agentRaw as AgentId;
@@ -42,18 +45,17 @@ export default async function PromptHistoryPage({
           href={`/prompts/${agent}`}
           className="text-xs text-atea-navy underline hover:text-atea-red"
         >
-          ← Tilbake til editor
+          {t("history.back", lang)}
         </Link>
       </div>
 
       <header className="mb-8">
         <div className="text-xs font-semibold uppercase tracking-wider text-atea-red">
-          {agent === "writer" ? "Writer" : "Translator"} · Historikk
+          {agent === "writer" ? "Writer" : "Translator"} · {t("history.section", lang)}
         </div>
-        <h1 className="mt-1 text-3xl font-bold text-atea-navy">Versjoner</h1>
+        <h1 className="mt-1 text-3xl font-bold text-atea-navy">{t("history.title", lang)}</h1>
         <p className="mt-2 text-sm text-black/60">
-          {versions.length} versjoner. Klikk «Sett som gjeldende» for å rulle tilbake — det
-          påvirker kun fremtidige kjøringer, ikke eksisterende artikler.
+          {versions.length} {t("history.description", lang)}
         </p>
       </header>
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { MarkdownView } from "@/components/MarkdownView";
 import { ArticleReviser } from "@/components/ArticleReviser";
+import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { TARGET_LANGUAGE_LABELS, type TargetLanguage } from "@/lib/agents/types";
 import type { StoredArticle } from "@/lib/articles/ArticleStore";
 
@@ -14,6 +15,7 @@ type TabKey = "no" | TargetLanguage;
  * plus export buttons (.md / .docx) and a link to translate into new languages.
  */
 export function ArticleViewer({ article }: { article: StoredArticle }) {
+  const { t } = useTranslation();
   const translatedLanguages = Object.keys(article.translations) as TargetLanguage[];
   const [tab, setTab] = useState<TabKey>("no");
   const [isExporting, setIsExporting] = useState<false | "md" | "docx">(false);
@@ -32,7 +34,7 @@ export function ArticleViewer({ article }: { article: StoredArticle }) {
       });
       if (!res.ok) {
         const err = await res.text();
-        alert(`Eksport feilet: ${err}`);
+        alert(`${t("viewer.exportFailed")} ${err}`);
         return;
       }
       const blob = await res.blob();
@@ -53,7 +55,7 @@ export function ArticleViewer({ article }: { article: StoredArticle }) {
     <div className="mx-auto max-w-4xl px-10 py-10">
       <div className="mb-4">
         <Link href="/articles" className="text-xs text-atea-navy underline hover:text-atea-red">
-          ← Alle artikler
+          {t("viewer.allArticles")}
         </Link>
       </div>
 
@@ -69,7 +71,7 @@ export function ArticleViewer({ article }: { article: StoredArticle }) {
       <div className="mb-4 flex items-center justify-between gap-4 border-b border-black/10">
         <div className="flex">
           <TabButton active={tab === "no"} onClick={() => setTab("no")}>
-            Norsk (kilde)
+            {t("viewer.norwegianSource")}
           </TabButton>
           {translatedLanguages.map((lang) => (
             <TabButton key={lang} active={tab === lang} onClick={() => setTab(lang)}>
@@ -83,14 +85,14 @@ export function ArticleViewer({ article }: { article: StoredArticle }) {
             disabled={isExporting !== false}
             className="rounded border border-black/15 bg-white px-3 py-1.5 text-xs font-medium text-atea-navy hover:bg-atea-sand disabled:opacity-50"
           >
-            {isExporting === "md" ? "…" : "Last ned .md"}
+            {isExporting === "md" ? "…" : t("viewer.downloadMd")}
           </button>
           <button
             onClick={() => exportAs("docx")}
             disabled={isExporting !== false}
             className="rounded bg-atea-green px-3 py-1.5 text-xs font-medium text-white hover:bg-atea-green/90 disabled:opacity-50"
           >
-            {isExporting === "docx" ? "…" : "Last ned .docx"}
+            {isExporting === "docx" ? "…" : t("viewer.downloadDocx")}
           </button>
         </div>
       </div>
@@ -107,13 +109,13 @@ export function ArticleViewer({ article }: { article: StoredArticle }) {
       <footer className="mt-4 text-[11px] text-black/40">
         {tab !== "no" && (
           <>
-            Oversatt: {new Date(activeResult.createdAt).toLocaleString("nb-NO")} ·{" "}
+            {t("viewer.translated")} {new Date(activeResult.createdAt).toLocaleString("nb-NO")} ·{" "}
             {activeResult.model} · prompt {activeResult.promptVersion} ·{" "}
             {activeResult.inputTokens} → {activeResult.outputTokens} tokens
           </>
         )}
         {tab === "no" && article.revisions && article.revisions.length > 0 && (
-          <>Revisjon #{article.revisions.length + 1} · oppdatert {new Date(article.updatedAt).toLocaleString("nb-NO")}</>
+          <>{t("viewer.revision")} #{article.revisions.length + 1} · {t("viewer.updated")} {new Date(article.updatedAt).toLocaleString("nb-NO")}</>
         )}
       </footer>
 
@@ -152,13 +154,14 @@ function MissingLanguageCallout({
   articleId: string;
   existing: TabKey[];
 }) {
+  const { t } = useTranslation();
   const all: TargetLanguage[] = ["en", "sv", "da", "fi"];
   const missing = all.filter((l) => !existing.includes(l));
   if (missing.length === 0) return null;
   return (
     <div className="mt-4 flex items-center justify-between rounded-md bg-atea-navy/5 px-4 py-2 text-xs">
       <span className="text-black/60">
-        Mangler oversettelse for:{" "}
+        {t("viewer.missingTranslation")}{" "}
         <strong className="text-atea-navy">
           {missing.map((l) => TARGET_LANGUAGE_LABELS[l]).join(", ")}
         </strong>
@@ -167,7 +170,7 @@ function MissingLanguageCallout({
         href={`/translate?articleId=${articleId}`}
         className="font-medium text-atea-navy underline hover:text-atea-red"
       >
-        Oversett →
+        {t("viewer.translateLink")}
       </Link>
     </div>
   );

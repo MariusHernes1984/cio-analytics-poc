@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { PromptEditor } from "@/components/PromptEditor";
 import { MarkdownView } from "@/components/MarkdownView";
 import { streamSse } from "@/lib/sseClient";
+import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { AgentId } from "@/lib/agents/types";
 import type { PromptVersion, PromptVersionMeta } from "@/lib/prompts/PromptStore";
 
@@ -28,6 +29,7 @@ export function PromptEditorClient({
   initialVersions: PromptVersionMeta[];
 }) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   // Editor state
   const [systemPrompt, setSystemPrompt] = useState(initialCurrent.draft.systemPrompt);
@@ -65,7 +67,7 @@ export function PromptEditorClient({
 
   async function doSave() {
     if (!author.trim() || !changeNote.trim()) {
-      alert("Forfatter og change-note er påkrevd.");
+      alert(t("editor.authorRequired"));
       return;
     }
     setSaveState("saving");
@@ -147,44 +149,44 @@ export function PromptEditorClient({
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-wider text-atea-red">
-            {agent === "writer" ? "Writer-agent" : "Translator-agent"}
+            {agent === "writer" ? t("editor.writerAgent") : t("editor.translatorAgent")}
           </div>
-          <h1 className="mt-1 text-3xl font-bold text-atea-navy">Prompt-editor</h1>
+          <h1 className="mt-1 text-3xl font-bold text-atea-navy">{t("editor.title")}</h1>
           <div className="mt-2 flex items-center gap-2 text-[11px] text-black/50">
             <span>
-              Gjeldende: <strong className="font-mono">{initialCurrent.version}</strong>
+              {t("editor.current")} <strong className="font-mono">{initialCurrent.version}</strong>
             </span>
             <span>·</span>
-            <span>{initialVersions.length} versjoner</span>
+            <span>{initialVersions.length} {t("editor.versions")}</span>
             <span>·</span>
             <Link
               href={`/prompts/${agent}/history`}
               className="text-atea-navy underline hover:text-atea-red"
             >
-              Historikk
+              {t("editor.historyLink")}
             </Link>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {hasUnsavedChanges && (
             <>
-              <span className="text-[11px] text-atea-red">● Ulagrede endringer</span>
+              <span className="text-[11px] text-atea-red">{"● " + t("editor.unsavedChanges")}</span>
               <button
                 onClick={revertChanges}
                 className="rounded border border-black/15 bg-white px-3 py-1.5 text-xs text-black/70 hover:bg-atea-sand"
               >
-                Forkast
+                {t("editor.discard")}
               </button>
               <button
                 onClick={openSaveDialog}
                 className="rounded bg-atea-green px-4 py-1.5 text-xs font-semibold text-white hover:bg-atea-green/90"
               >
-                Lagre ny versjon
+                {t("editor.saveNewVersion")}
               </button>
             </>
           )}
           {!hasUnsavedChanges && saveState === "saved" && (
-            <span className="text-[11px] text-green-700">✓ Lagret</span>
+            <span className="text-[11px] text-green-700">{"✓ " + t("editor.saved")}</span>
           )}
         </div>
       </header>
@@ -193,7 +195,7 @@ export function PromptEditorClient({
       <div className="mb-4 flex flex-wrap gap-4 rounded-lg border border-black/10 bg-white p-4">
         <div>
           <label className="block text-[11px] font-semibold uppercase tracking-wider text-black/60">
-            Modell
+            {t("editor.modelLabel")}
           </label>
           <select
             value={model}
@@ -209,7 +211,7 @@ export function PromptEditorClient({
         </div>
         <div>
           <label className="block text-[11px] font-semibold uppercase tracking-wider text-black/60">
-            Max tokens
+            {t("editor.maxTokensLabel")}
           </label>
           <input
             type="number"
@@ -222,7 +224,7 @@ export function PromptEditorClient({
         </div>
         <div>
           <label className="block text-[11px] font-semibold uppercase tracking-wider text-black/60">
-            Temperatur
+            {t("editor.temperatureLabel")}
           </label>
           <input
             type="number"
@@ -236,7 +238,7 @@ export function PromptEditorClient({
         </div>
         <div className="ml-auto">
           <label className="block text-[11px] font-semibold uppercase tracking-wider text-black/60">
-            Variabler
+            {t("editor.variablesLabel")}
           </label>
           <div className="mt-1 flex flex-wrap gap-1">
             {initialCurrent.draft.variables.map((v) => (
@@ -256,14 +258,14 @@ export function PromptEditorClient({
         {/* Left: prompt editor */}
         <section>
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-black/60">
-            System-prompt
+            {t("editor.systemPromptLabel")}
           </h2>
           <div className="h-[640px]">
             <PromptEditor value={systemPrompt} onChange={setSystemPrompt} />
           </div>
           <div className="mt-2 text-[11px] text-black/40">
-            {systemPrompt.length.toLocaleString("nb-NO")} tegn ·{" "}
-            {systemPrompt.split(/\s+/).length.toLocaleString("nb-NO")} ord
+            {systemPrompt.length.toLocaleString("nb-NO")} {t("editor.chars")} ·{" "}
+            {systemPrompt.split(/\s+/).length.toLocaleString("nb-NO")} {t("editor.words")}
           </div>
         </section>
 
@@ -271,13 +273,13 @@ export function PromptEditorClient({
         <section>
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-black/60">
-              Test-pane
+              {t("editor.testPane")}
             </h2>
-            <span className="text-[11px] text-black/40">Lagrer ingenting</span>
+            <span className="text-[11px] text-black/40">{t("editor.savesNothing")}</span>
           </div>
           <div className="flex h-[640px] flex-col gap-3">
             <div>
-              <label className="block text-[11px] text-black/60">Test user-message</label>
+              <label className="block text-[11px] text-black/60">{t("editor.testUserMessage")}</label>
               <textarea
                 value={testUserMessage}
                 onChange={(e) => setTestUserMessage(e.target.value)}
@@ -289,12 +291,12 @@ export function PromptEditorClient({
               disabled={testState === "streaming"}
               className="rounded bg-atea-red px-3 py-1.5 text-xs font-semibold text-white hover:bg-atea-red/90 disabled:opacity-50"
             >
-              {testState === "streaming" ? "Kjører test…" : "Kjør test (uten å lagre)"}
+              {testState === "streaming" ? t("editor.runningTest") : t("editor.runTest")}
             </button>
             <div className="min-h-0 flex-1 overflow-y-auto rounded border border-black/10 bg-white p-4">
               {testState === "idle" && !testOutput && (
                 <div className="text-xs text-black/30">
-                  Klikk «Kjør test» for å sende draftet til Foundry og se output.
+                  {t("editor.testPlaceholder")}
                 </div>
               )}
               {testError && (
@@ -322,32 +324,32 @@ export function PromptEditorClient({
       {showSaveDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-atea-navy">Lagre ny versjon</h3>
+            <h3 className="text-lg font-bold text-atea-navy">{t("editor.saveDialogTitle")}</h3>
             <p className="mt-1 text-xs text-black/60">
-              Versjoner er immutable. Denne lagringen blir ny «current».
+              {t("editor.saveDialogDesc")}
             </p>
             <div className="mt-4 space-y-3">
               <label className="block">
                 <span className="block text-[11px] font-semibold uppercase tracking-wider text-black/60">
-                  Forfatter
+                  {t("editor.authorLabel")}
                 </span>
                 <input
                   type="text"
                   value={author}
                   onChange={(e) => setAuthor(e.target.value)}
-                  placeholder="Navn eller initialer"
+                  placeholder={t("editor.authorPlaceholder")}
                   className="mt-1 w-full rounded border border-black/15 bg-white px-3 py-2 text-sm"
                   maxLength={120}
                 />
               </label>
               <label className="block">
                 <span className="block text-[11px] font-semibold uppercase tracking-wider text-black/60">
-                  Change-note
+                  {t("editor.changeNoteLabel")}
                 </span>
                 <textarea
                   value={changeNote}
                   onChange={(e) => setChangeNote(e.target.value)}
-                  placeholder="Hva endret du, og hvorfor?"
+                  placeholder={t("editor.changeNotePlaceholder")}
                   className="mt-1 min-h-[80px] w-full rounded border border-black/15 bg-white px-3 py-2 text-sm"
                   maxLength={500}
                 />
@@ -364,14 +366,14 @@ export function PromptEditorClient({
                 disabled={saveState === "saving"}
                 className="rounded border border-black/15 bg-white px-3 py-1.5 text-xs text-black/70 hover:bg-atea-sand"
               >
-                Avbryt
+                {t("common.cancel")}
               </button>
               <button
                 onClick={doSave}
                 disabled={saveState === "saving"}
                 className="rounded bg-atea-green px-4 py-1.5 text-xs font-semibold text-white hover:bg-atea-green/90 disabled:opacity-50"
               >
-                {saveState === "saving" ? "Lagrer…" : "Lagre"}
+                {saveState === "saving" ? t("common.saving") : t("common.save")}
               </button>
             </div>
           </div>

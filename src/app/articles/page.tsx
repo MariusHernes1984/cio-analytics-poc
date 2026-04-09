@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getArticleStore } from "@/lib/articles/ArticleStore";
 import { TARGET_LANGUAGE_LABELS } from "@/lib/agents/types";
 import { requireSession } from "@/lib/auth/requireSession";
+import { t } from "@/lib/i18n/translations";
+import { getServerLang } from "@/lib/i18n/getServerLang";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +14,7 @@ export default async function ArticlesPage() {
     return <div className="p-10 text-sm text-red-700">Unauthorized.</div>;
   }
 
+  const lang = await getServerLang();
   const store = await getArticleStore();
   const items = await store.list();
 
@@ -19,19 +22,19 @@ export default async function ArticlesPage() {
     <div className="mx-auto max-w-5xl px-10 py-10">
       <header className="mb-8">
         <div className="text-xs font-semibold uppercase tracking-wider text-atea-red">
-          Artikler
+          {t("articles.section", lang)}
         </div>
-        <h1 className="mt-1 text-3xl font-bold text-atea-navy">Alle genererte artikler</h1>
+        <h1 className="mt-1 text-3xl font-bold text-atea-navy">{t("articles.title", lang)}</h1>
         <p className="mt-2 text-sm text-black/60">
-          {items.length} {items.length === 1 ? "artikkel" : "artikler"} lagret.
+          {items.length} {t(items.length === 1 ? "articles.countSingular" : "articles.countPlural", lang)}
         </p>
       </header>
 
       {items.length === 0 ? (
         <div className="rounded-lg border border-dashed border-black/15 bg-white/50 p-10 text-center text-sm text-black/50">
-          Ingen artikler ennå.{" "}
+          {t("articles.noArticles", lang)}{" "}
           <Link href="/write" className="text-atea-navy underline hover:text-atea-red">
-            Skriv den første
+            {t("articles.writeFirst", lang)}
           </Link>
           .
         </div>
@@ -47,8 +50,8 @@ export default async function ArticlesPage() {
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-semibold text-atea-navy">{item.title}</div>
                     <div className="mt-0.5 text-[11px] text-black/50">
-                      Opprettet {new Date(item.createdAt).toLocaleString("nb-NO")} ·{" "}
-                      Sist oppdatert {new Date(item.updatedAt).toLocaleString("nb-NO")}
+                      {t("articles.created", lang)} {new Date(item.createdAt).toLocaleString("nb-NO")} ·{" "}
+                      {t("articles.lastUpdated", lang)} {new Date(item.updatedAt).toLocaleString("nb-NO")}
                     </div>
                     <div className="mt-1 text-[11px] text-black/60">
                       {item.model} · prompt {item.promptVersion}

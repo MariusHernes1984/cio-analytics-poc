@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MarkdownView } from "@/components/MarkdownView";
 import { streamSse } from "@/lib/sseClient";
+import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { ResearchMaterial } from "@/lib/agents/types";
 
 type RunStatus = "idle" | "streaming" | "done" | "error";
@@ -18,15 +19,16 @@ interface RunMeta {
   warnings?: string[];
 }
 
-const RESEARCH_KINDS: Array<{ value: ResearchMaterial["kind"]; label: string }> = [
-  { value: "transcript", label: "Intervju-transkripsjon" },
-  { value: "survey-data", label: "Survey-data" },
-  { value: "notes", label: "Notater" },
-  { value: "reference-article", label: "Referanse-artikkel" },
-];
-
 export function WriterForm() {
   const router = useRouter();
+  const { t } = useTranslation();
+
+  const RESEARCH_KINDS: Array<{ value: ResearchMaterial["kind"]; label: string }> = [
+    { value: "transcript", label: t("writer.kindTranscript") },
+    { value: "survey-data", label: t("writer.kindSurvey") },
+    { value: "notes", label: t("writer.kindNotes") },
+    { value: "reference-article", label: t("writer.kindReference") },
+  ];
 
   const [topic, setTopic] = useState("");
   const [brief, setBrief] = useState("");
@@ -122,12 +124,12 @@ export function WriterForm() {
   return (
     <div className="grid gap-8 lg:grid-cols-[420px_1fr]">
       <form onSubmit={submit} className="space-y-5">
-        <Field label="Tema" required>
+        <Field label={t("writer.topicLabel")} required>
           <input
             type="text"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder="Hvordan norske CIO-er prioriterer AI-investeringer i 2026"
+            placeholder={t("writer.topicPlaceholder")}
             className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm"
             required
             minLength={5}
@@ -135,11 +137,11 @@ export function WriterForm() {
           />
         </Field>
 
-        <Field label="Brief (vinkel og lesersmerte)" required>
+        <Field label={t("writer.briefLabel")} required>
           <textarea
             value={brief}
             onChange={(e) => setBrief(e.target.value)}
-            placeholder="Hva er vinkelen? Hvilket problem løser artikkelen for IT-lederen?"
+            placeholder={t("writer.briefPlaceholder")}
             className="min-h-[120px] w-full rounded border border-black/15 bg-white px-3 py-2 text-sm"
             required
             minLength={50}
@@ -148,7 +150,7 @@ export function WriterForm() {
           <div className="mt-1 text-[11px] text-black/40">{brief.length}/5000</div>
         </Field>
 
-        <Field label="Mål-lengde (ord)">
+        <Field label={t("writer.targetLengthLabel")}>
           <input
             type="number"
             min={300}
@@ -157,14 +159,14 @@ export function WriterForm() {
             onChange={(e) => setTargetLengthWords(parseInt(e.target.value || "750", 10))}
             className="w-32 rounded border border-black/15 bg-white px-3 py-2 text-sm"
           />
-          <span className="ml-2 text-[11px] text-black/50">Standard: 750</span>
+          <span className="ml-2 text-[11px] text-black/50">{t("writer.targetLengthDefault")}</span>
         </Field>
 
-        <Field label="Stil-notater (valgfritt)">
+        <Field label={t("writer.styleNotesLabel")}>
           <textarea
             value={styleNotes}
             onChange={(e) => setStyleNotes(e.target.value)}
-            placeholder="F.eks. unngå buzzwords, legg vekt på konkrete tall..."
+            placeholder={t("writer.styleNotesPlaceholder")}
             className="min-h-[70px] w-full rounded border border-black/15 bg-white px-3 py-2 text-sm"
             maxLength={2000}
           />
@@ -173,19 +175,19 @@ export function WriterForm() {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-black/60">
-              Researchmateriale
+              {t("writer.researchLabel")}
             </span>
             <button
               type="button"
               onClick={addResearch}
               className="rounded border border-black/15 bg-white px-2 py-1 text-[11px] font-medium text-atea-navy hover:bg-atea-sand"
             >
-              + Legg til
+              {t("writer.addResearch")}
             </button>
           </div>
           {research.length === 0 && (
             <div className="rounded border border-dashed border-black/15 bg-white/50 p-3 text-[11px] text-black/40">
-              Ingen researchmateriale lagt til. Writer vil skrive kun fra brief.
+              {t("writer.noResearch")}
             </div>
           )}
           {research.map((item, idx) => (
@@ -208,7 +210,7 @@ export function WriterForm() {
                   type="text"
                   value={item.label}
                   onChange={(e) => updateResearch(idx, { label: e.target.value })}
-                  placeholder="Kort merkelapp"
+                  placeholder={t("writer.shortLabel")}
                   className="flex-1 rounded border border-black/15 bg-white px-2 py-1 text-xs"
                 />
                 <button
@@ -216,13 +218,13 @@ export function WriterForm() {
                   onClick={() => removeResearch(idx)}
                   className="text-[11px] text-black/40 hover:text-atea-red"
                 >
-                  Fjern
+                  {t("common.remove")}
                 </button>
               </div>
               <textarea
                 value={item.content}
                 onChange={(e) => updateResearch(idx, { content: e.target.value })}
-                placeholder="Lim inn innholdet her…"
+                placeholder={t("writer.pasteContent")}
                 className="min-h-[80px] w-full rounded border border-black/15 bg-white px-2 py-1 text-xs font-mono"
               />
             </div>
@@ -235,7 +237,7 @@ export function WriterForm() {
             disabled={status === "streaming"}
             className="rounded bg-atea-green px-4 py-2 text-sm font-semibold text-white hover:bg-atea-green/90 disabled:opacity-50"
           >
-            {status === "streaming" ? "Genererer…" : "Generer artikkel"}
+            {status === "streaming" ? t("writer.generating") : t("writer.generate")}
           </button>
           {status === "streaming" && (
             <button
@@ -243,7 +245,7 @@ export function WriterForm() {
               onClick={cancel}
               className="rounded border border-black/15 bg-white px-4 py-2 text-sm text-black/70 hover:bg-atea-sand"
             >
-              Avbryt
+              {t("common.cancel")}
             </button>
           )}
           {canOpenArticle && (
@@ -252,7 +254,7 @@ export function WriterForm() {
               onClick={() => router.push(`/articles/${meta.articleId}`)}
               className="ml-auto rounded bg-atea-red px-4 py-2 text-sm font-semibold text-white hover:bg-atea-red/90"
             >
-              Åpne artikkel →
+              {t("writer.openArticle")}
             </button>
           )}
         </div>
@@ -261,7 +263,7 @@ export function WriterForm() {
       <div className="min-h-[400px] rounded-lg border border-black/10 bg-white p-6">
         <div className="mb-3 flex items-center justify-between border-b border-black/10 pb-3">
           <div className="text-xs font-semibold uppercase tracking-wider text-black/60">
-            Utkast
+            {t("writer.draft")}
           </div>
           <StatusBadge
             status={status}
@@ -272,13 +274,13 @@ export function WriterForm() {
 
         {status === "idle" && !markdown && (
           <div className="flex h-64 items-center justify-center text-sm text-black/30">
-            Fyll ut skjemaet og klikk «Generer artikkel».
+            {t("writer.draftPlaceholder")}
           </div>
         )}
 
         {errorMessage && (
           <div className="mb-3 rounded bg-red-50 px-3 py-2 text-sm text-red-700">
-            Feil: {errorMessage}
+            {t("common.errorPrefix")} {errorMessage}
           </div>
         )}
 
@@ -286,7 +288,7 @@ export function WriterForm() {
 
         {status === "done" && (
           <footer className="mt-6 border-t border-black/10 pt-3 text-[11px] text-black/50">
-            Ferdig · {meta.inputTokens} → {meta.outputTokens} tokens ·{" "}
+            {t("common.done")} · {meta.inputTokens} → {meta.outputTokens} tokens ·{" "}
             {meta.durationMs ? `${(meta.durationMs / 1000).toFixed(1)}s` : "—"}
             {meta.warnings && meta.warnings.length > 0 && (
               <div className="mt-2 rounded bg-amber-50 px-2 py-1 text-amber-800">
@@ -329,11 +331,13 @@ function StatusBadge({
   model?: string;
   promptVersion?: string;
 }) {
+  const { t } = useTranslation();
+
   if (status === "idle") return null;
   const label: Record<Exclude<RunStatus, "idle">, string> = {
-    streaming: "Streaming",
-    done: "Ferdig",
-    error: "Feil",
+    streaming: t("common.streaming"),
+    done: t("common.done"),
+    error: t("common.error"),
   };
   const colors: Record<Exclude<RunStatus, "idle">, string> = {
     streaming: "bg-atea-navy/10 text-atea-navy",
