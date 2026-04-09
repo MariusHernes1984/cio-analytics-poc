@@ -39,7 +39,7 @@ export function RollbackButton({
 
   if (isCurrent) {
     return (
-      <span className="rounded bg-atea-navy px-2 py-1 text-[10px] font-semibold uppercase text-white">
+      <span className="rounded bg-atea-green px-2 py-1 text-[10px] font-semibold uppercase text-white">
         Gjeldende
       </span>
     );

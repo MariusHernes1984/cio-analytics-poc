@@ -107,7 +107,7 @@ export function ArticleReviser({ articleId }: { articleId: string }) {
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            className="rounded bg-atea-navy px-3 py-1.5 text-xs font-semibold text-white hover:bg-atea-navy/90"
+            className="rounded bg-atea-green px-3 py-1.5 text-xs font-semibold text-white hover:bg-atea-green/90"
           >
             Start revisjon
           </button>
@@ -174,7 +174,7 @@ export function ArticleReviser({ articleId }: { articleId: string }) {
             <button
               type="button"
               onClick={applyAndReload}
-              className="rounded bg-atea-navy px-4 py-2 text-sm font-semibold text-white hover:bg-atea-navy/90"
+              className="rounded bg-atea-green px-4 py-2 text-sm font-semibold text-white hover:bg-atea-green/90"
             >
               Bruk ny versjon →
             </button>

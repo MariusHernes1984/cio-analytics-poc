@@ -255,7 +255,7 @@ export function TranslatorForm() {
               key={lang}
               className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition ${
                 selectedLangs.includes(lang)
-                  ? "border-atea-navy bg-atea-navy text-white"
+                  ? "border-atea-green bg-atea-green text-white"
                   : "border-black/15 bg-white text-black/70 hover:bg-atea-sand"
               }`}
             >
@@ -323,7 +323,7 @@ export function TranslatorForm() {
         <button
           type="submit"
           disabled={isRunning || selectedLangs.length === 0}
-          className="rounded bg-atea-navy px-5 py-2 text-sm font-semibold text-white hover:bg-atea-navy/90 disabled:opacity-50"
+          className="rounded bg-atea-green px-5 py-2 text-sm font-semibold text-white hover:bg-atea-green/90 disabled:opacity-50"
         >
           {isRunning
             ? `Oversetter til ${selectedLangs.length} språk…`
@@ -375,7 +375,7 @@ function ModeButton({
       onClick={onClick}
       className={`rounded-md border px-3 py-1.5 text-xs font-medium transition ${
         active
-          ? "border-atea-navy bg-atea-navy text-white"
+          ? "border-atea-green bg-atea-green text-white"
           : "border-black/15 bg-white text-black/70 hover:bg-atea-sand"
       }`}
     >

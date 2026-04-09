@@ -88,7 +88,7 @@ export function ArticleViewer({ article }: { article: StoredArticle }) {
           <button
             onClick={() => exportAs("docx")}
             disabled={isExporting !== false}
-            className="rounded bg-atea-navy px-3 py-1.5 text-xs font-medium text-white hover:bg-atea-navy/90 disabled:opacity-50"
+            className="rounded bg-atea-green px-3 py-1.5 text-xs font-medium text-white hover:bg-atea-green/90 disabled:opacity-50"
           >
             {isExporting === "docx" ? "…" : "Last ned .docx"}
           </button>

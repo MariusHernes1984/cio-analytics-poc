@@ -177,7 +177,7 @@ export function PromptEditorClient({
               </button>
               <button
                 onClick={openSaveDialog}
-                className="rounded bg-atea-navy px-4 py-1.5 text-xs font-semibold text-white hover:bg-atea-navy/90"
+                className="rounded bg-atea-green px-4 py-1.5 text-xs font-semibold text-white hover:bg-atea-green/90"
               >
                 Lagre ny versjon
               </button>
@@ -369,7 +369,7 @@ export function PromptEditorClient({
               <button
                 onClick={doSave}
                 disabled={saveState === "saving"}
-                className="rounded bg-atea-navy px-4 py-1.5 text-xs font-semibold text-white hover:bg-atea-navy/90 disabled:opacity-50"
+                className="rounded bg-atea-green px-4 py-1.5 text-xs font-semibold text-white hover:bg-atea-green/90 disabled:opacity-50"
               >
                 {saveState === "saving" ? "Lagrer…" : "Lagre"}
               </button>

@@ -118,7 +118,7 @@ function CtaCard({
   accent: "primary" | "secondary" | "ghost";
 }) {
   const classes: Record<typeof accent, string> = {
-    primary: "bg-atea-navy text-white hover:bg-atea-navy/90",
+    primary: "bg-atea-green text-white hover:bg-atea-green/90",
     secondary: "bg-atea-red text-white hover:bg-atea-red/90",
     ghost: "bg-white text-atea-navy border border-black/10 hover:bg-atea-sand",
   };

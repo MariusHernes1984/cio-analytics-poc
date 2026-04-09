@@ -7,7 +7,7 @@ export default function NotFound() {
       <div className="mt-2 text-lg text-black/60">Fant ikke siden.</div>
       <Link
         href="/"
-        className="mt-6 inline-block rounded bg-atea-navy px-4 py-2 text-sm font-semibold text-white hover:bg-atea-navy/90"
+        className="mt-6 inline-block rounded bg-atea-green px-4 py-2 text-sm font-semibold text-white hover:bg-atea-green/90"
       >
         Tilbake til dashboard
       </Link>

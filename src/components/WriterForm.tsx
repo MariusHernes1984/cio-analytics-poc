@@ -233,7 +233,7 @@ export function WriterForm() {
           <button
             type="submit"
             disabled={status === "streaming"}
-            className="rounded bg-atea-navy px-4 py-2 text-sm font-semibold text-white hover:bg-atea-navy/90 disabled:opacity-50"
+            className="rounded bg-atea-green px-4 py-2 text-sm font-semibold text-white hover:bg-atea-green/90 disabled:opacity-50"
           >
             {status === "streaming" ? "Genererer…" : "Generer artikkel"}
           </button>

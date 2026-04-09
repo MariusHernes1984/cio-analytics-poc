@@ -17,7 +17,7 @@ const AGENTS: Array<{
     label: "Writer",
     description:
       "Skriver nye norske CIO Analytics-artikler fra brief + researchmateriale. Default: Sonnet 4.6.",
-    accent: "bg-atea-navy",
+    accent: "bg-atea-green",
   },
   {
     id: "translator",
@@ -93,7 +93,7 @@ export default async function PromptsPage() {
               <div className="mt-5 flex gap-2">
                 <Link
                   href={`/prompts/${card.id}`}
-                  className="rounded bg-atea-navy px-3 py-1.5 text-xs font-semibold text-white hover:bg-atea-navy/90"
+                  className="rounded bg-atea-green px-3 py-1.5 text-xs font-semibold text-white hover:bg-atea-green/90"
                 >
                   Rediger
                 </Link>
