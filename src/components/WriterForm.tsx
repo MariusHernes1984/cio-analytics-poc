@@ -7,6 +7,7 @@ import { ReviewPanel } from "@/components/ReviewPanel";
 import { streamSse } from "@/lib/sseClient";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { ArticleReview, ResearchMaterial } from "@/lib/agents/types";
+import { formatCostNOK } from "@/lib/cost";
 
 type RunStatus = "idle" | "streaming" | "done" | "error";
 type ReviewStatus = "idle" | "streaming" | "done" | "error";
@@ -333,7 +334,10 @@ export function WriterForm() {
         {status === "done" && (
           <footer className="mt-6 border-t border-black/10 pt-3 text-[11px] text-black/50">
             {t("common.done")} · {meta.inputTokens} → {meta.outputTokens} tokens ·{" "}
-            {meta.durationMs ? `${(meta.durationMs / 1000).toFixed(1)}s` : "—"}
+            {meta.durationMs ? `${(meta.durationMs / 1000).toFixed(1)}s` : "—"} ·{" "}
+            {meta.model && meta.inputTokens && meta.outputTokens
+              ? formatCostNOK(meta.model, meta.inputTokens, meta.outputTokens)
+              : ""}
             {meta.warnings && meta.warnings.length > 0 && (
               <div className="mt-2 rounded bg-amber-50 px-2 py-1 text-amber-800">
                 ⚠ {meta.warnings.join(" · ")}
