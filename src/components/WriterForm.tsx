@@ -3,11 +3,13 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MarkdownView } from "@/components/MarkdownView";
+import { ReviewPanel } from "@/components/ReviewPanel";
 import { streamSse } from "@/lib/sseClient";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
-import type { ResearchMaterial } from "@/lib/agents/types";
+import type { ArticleReview, ResearchMaterial } from "@/lib/agents/types";
 
 type RunStatus = "idle" | "streaming" | "done" | "error";
+type ReviewStatus = "idle" | "streaming" | "done" | "error";
 
 interface RunMeta {
   model?: string;
@@ -42,6 +44,10 @@ export function WriterForm() {
   const [meta, setMeta] = useState<RunMeta>({});
   const abortRef = useRef<AbortController | null>(null);
 
+  const [reviewStatus, setReviewStatus] = useState<ReviewStatus>("idle");
+  const [reviewData, setReviewData] = useState<ArticleReview | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (status === "streaming") return;
@@ -50,9 +56,15 @@ export function WriterForm() {
     setErrorMessage(null);
     setMarkdown("");
     setMeta({});
+    setReviewStatus("idle");
+    setReviewData(null);
+    setReviewError(null);
 
     const controller = new AbortController();
     abortRef.current = controller;
+
+    let finalMarkdown = "";
+    let finalArticleId = "";
 
     try {
       await streamSse({
@@ -69,6 +81,7 @@ export function WriterForm() {
           if (ev.type === "start") {
             setMeta((m) => ({ ...m, model: ev.model, promptVersion: ev.promptVersion }));
           } else if (ev.type === "delta") {
+            finalMarkdown += ev.text;
             setMarkdown((prev) => prev + ev.text);
           } else if (ev.type === "done") {
             const r = ev.result as
@@ -80,6 +93,7 @@ export function WriterForm() {
                   warnings: string[];
                 }
               | undefined;
+            finalArticleId = r?.articleId ?? "";
             setMeta((m) => ({
               ...m,
               articleId: r?.articleId,
@@ -103,10 +117,40 @@ export function WriterForm() {
       setErrorMessage((err as Error).message);
       setStatus("error");
     }
+
+    // Auto-trigger quality review after writer finishes.
+    // Pass brief/topic explicitly to avoid stale-closure issues.
+    if (finalArticleId && finalMarkdown) {
+      triggerReview(finalArticleId, finalMarkdown, topic, brief);
+    }
   }
 
   function cancel() {
     abortRef.current?.abort();
+  }
+
+  async function triggerReview(articleId: string, md: string, t_topic: string, t_brief: string) {
+    setReviewStatus("streaming");
+    setReviewError(null);
+    try {
+      await streamSse({
+        url: "/api/review",
+        body: { articleId, markdown: md, brief: t_brief, topic: t_topic },
+        onEvent(ev) {
+          if (ev.type === "done") {
+            const r = ev.result as { review: ArticleReview } | undefined;
+            if (r?.review) setReviewData(r.review);
+            setReviewStatus("done");
+          } else if (ev.type === "error") {
+            setReviewError(ev.message);
+            setReviewStatus("error");
+          }
+        },
+      });
+    } catch (err) {
+      setReviewError(err instanceof Error ? err.message : String(err));
+      setReviewStatus("error");
+    }
   }
 
   function addResearch() {
@@ -296,6 +340,21 @@ export function WriterForm() {
               </div>
             )}
           </footer>
+        )}
+
+        {reviewStatus === "streaming" && (
+          <div className="mt-4 flex items-center gap-2 rounded bg-atea-navy/5 px-3 py-2 text-xs text-atea-navy">
+            <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-atea-navy/30 border-t-atea-navy" />
+            {t("reviewer.autoReview")}
+          </div>
+        )}
+        {reviewStatus === "error" && (
+          <div className="mt-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700">
+            {t("reviewer.title")}: {reviewError ?? t("common.error")}
+          </div>
+        )}
+        {reviewStatus === "done" && reviewData && (
+          <ReviewPanel review={reviewData} />
         )}
       </div>
     </div>

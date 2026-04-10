@@ -182,6 +182,19 @@ const dict: Record<string, Record<UILang, string>> = {
     no: "Merk: Eventuelle oversettelser er nå basert på den forrige versjonen. Vurder å kjøre oversettelse på nytt fra artikkelen sin «Oversett»-lenke.",
   },
 
+  // ── Reviewer ────────────────────────────────────────────
+  "reviewer.title": { en: "Quality review", no: "Kvalitetsvurdering" },
+  "reviewer.reviewing": { en: "Reviewing…", no: "Vurderer…" },
+  "reviewer.overallScore": { en: "Overall score", no: "Totalvurdering" },
+  "reviewer.summary": { en: "Summary", no: "Oppsummering" },
+  "reviewer.suggestions": { en: "Suggestions", no: "Forbedringsforslag" },
+  "reviewer.fixIssues": { en: "Fix issues →", no: "Fiks problemer →" },
+  "reviewer.autoReview": { en: "Auto-reviewing article quality…", no: "Automatisk kvalitetsvurdering…" },
+  "reviewer.dimensions": { en: "Dimensions", no: "Dimensjoner" },
+  "reviewer.model": { en: "Model", no: "Modell" },
+  "reviewer.duration": { en: "Duration", no: "Varighet" },
+  "reviewer.tokens": { en: "Tokens", no: "Tokens" },
+
   // ── Prompt editor ──────────────────────────────────────
   "editor.writerAgent": { en: "Writer agent", no: "Writer-agent" },
   "editor.translatorAgent": { en: "Translator agent", no: "Translator-agent" },

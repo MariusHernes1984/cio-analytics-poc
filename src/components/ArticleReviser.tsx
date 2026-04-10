@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MarkdownView } from "@/components/MarkdownView";
 import { streamSse } from "@/lib/sseClient";
@@ -23,11 +23,26 @@ type Status = "idle" | "streaming" | "done" | "error";
  * if the user doesn't like the result, and skipping the preview-vs-save
  * distinction removes a whole class of UI state.
  */
-export function ArticleReviser({ articleId }: { articleId: string }) {
+export function ArticleReviser({
+  articleId,
+  initialFeedback = "",
+}: {
+  articleId: string;
+  initialFeedback?: string;
+}) {
   const router = useRouter();
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [feedback, setFeedback] = useState("");
+
+  // When initialFeedback changes externally (e.g. from ReviewPanel "Fix issues"),
+  // populate the textarea and auto-expand the panel.
+  useEffect(() => {
+    if (initialFeedback) {
+      setFeedback(initialFeedback);
+      setExpanded(true);
+    }
+  }, [initialFeedback]);
   const [status, setStatus] = useState<Status>("idle");
   const [markdown, setMarkdown] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

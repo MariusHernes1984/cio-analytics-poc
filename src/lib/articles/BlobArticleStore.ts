@@ -1,6 +1,6 @@
 import { BlobServiceClient, type ContainerClient } from "@azure/storage-blob";
 import { getEnv } from "@/lib/env";
-import type { AgentRunResult, TargetLanguage } from "@/lib/agents/types";
+import type { AgentRunResult, ArticleReview, TargetLanguage } from "@/lib/agents/types";
 import {
   extractTitle,
   type ArticleListItem,
@@ -91,6 +91,14 @@ export class BlobArticleStore implements ArticleStore {
     article.source = newResult;
     article.title = extractTitle(newResult.markdown, article.title);
     article.updatedAt = now;
+    await this.save(article);
+  }
+
+  async attachReview(id: string, review: ArticleReview): Promise<void> {
+    const article = await this.get(id);
+    if (!article) throw new Error(`Article ${id} not found`);
+    article.review = review;
+    article.updatedAt = new Date().toISOString();
     await this.save(article);
   }
 }

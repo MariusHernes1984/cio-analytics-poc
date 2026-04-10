@@ -77,3 +77,37 @@ export type AgentStreamEvent =
   | { type: "delta"; text: string }
   | { type: "done"; result: AgentRunResult }
   | { type: "error"; message: string };
+
+/* ── Quality reviewer types ──────────────────────────── */
+
+export interface ReviewDimension {
+  dimension: string;
+  label: string;
+  score: number; // 1–5
+  feedback: string;
+}
+
+export interface ArticleReview {
+  dimensions: ReviewDimension[];
+  overallScore: number; // 1–5
+  summary: string;
+  suggestions: string[];
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  durationMs: number;
+  createdAt: string;
+}
+
+export interface ReviewerInput {
+  articleId: string;
+  markdown: string;
+  brief: string;
+  topic: string;
+}
+
+export type ReviewStreamEvent =
+  | { type: "start"; model: string }
+  | { type: "delta"; text: string }
+  | { type: "done"; result: { review: ArticleReview } }
+  | { type: "error"; message: string };

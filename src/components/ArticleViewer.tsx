@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { MarkdownView } from "@/components/MarkdownView";
 import { ArticleReviser } from "@/components/ArticleReviser";
+import { ReviewPanel } from "@/components/ReviewPanel";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { TARGET_LANGUAGE_LABELS, type TargetLanguage } from "@/lib/agents/types";
 import type { StoredArticle } from "@/lib/articles/ArticleStore";
@@ -19,6 +20,7 @@ export function ArticleViewer({ article }: { article: StoredArticle }) {
   const translatedLanguages = Object.keys(article.translations) as TargetLanguage[];
   const [tab, setTab] = useState<TabKey>("no");
   const [isExporting, setIsExporting] = useState<false | "md" | "docx">(false);
+  const [reviserFeedback, setReviserFeedback] = useState("");
 
   const activeResult = tab === "no" ? article.source : article.translations[tab]!;
   const activeMarkdown = activeResult.markdown;
@@ -119,7 +121,19 @@ export function ArticleViewer({ article }: { article: StoredArticle }) {
         )}
       </footer>
 
-      {tab === "no" && <ArticleReviser articleId={article.id} />}
+      {tab === "no" && article.review && (
+        <ReviewPanel
+          review={article.review}
+          onFixIssues={(feedback) => setReviserFeedback(feedback)}
+        />
+      )}
+
+      {tab === "no" && (
+        <ArticleReviser
+          articleId={article.id}
+          initialFeedback={reviserFeedback}
+        />
+      )}
     </div>
   );
 }

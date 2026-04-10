@@ -1,5 +1,3 @@
-import type { AgentStreamEvent } from "@/lib/agents/types";
-
 /**
  * Shared helper for converting an agent's AsyncGenerator into a
  * Server-Sent Events (SSE) stream that the browser can consume via
@@ -10,8 +8,8 @@ import type { AgentStreamEvent } from "@/lib/agents/types";
  *
  * The client reconstructs events from these lines.
  */
-export function agentStreamToSSE(
-  generator: AsyncGenerator<AgentStreamEvent>,
+export function agentStreamToSSE<T extends { type: string }>(
+  generator: AsyncGenerator<T>,
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
   return new ReadableStream<Uint8Array>({
@@ -22,8 +20,8 @@ export function agentStreamToSSE(
           controller.enqueue(encoder.encode(line));
         }
       } catch (error) {
-        const errorEvent: AgentStreamEvent = {
-          type: "error",
+        const errorEvent = {
+          type: "error" as const,
           message: error instanceof Error ? error.message : String(error),
         };
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorEvent)}\n\n`));

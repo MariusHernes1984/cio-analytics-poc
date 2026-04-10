@@ -1,4 +1,4 @@
-import type { AgentRunResult, TargetLanguage } from "@/lib/agents/types";
+import type { AgentRunResult, ArticleReview, TargetLanguage } from "@/lib/agents/types";
 
 /**
  * Storage abstraction for generated articles and their translations.
@@ -22,6 +22,7 @@ export interface StoredArticle {
   /** Prior versions, oldest first. Empty on freshly-generated articles. */
   revisions?: ArticleRevision[];
   translations: Partial<Record<TargetLanguage, AgentRunResult>>;
+  review?: ArticleReview;
   createdAt: string;
   updatedAt: string;
 }
@@ -47,6 +48,7 @@ export interface ArticleStore {
    * caller/UI is responsible for prompting the user to re-translate if needed.
    */
   revise(id: string, newResult: AgentRunResult, feedback: string): Promise<void>;
+  attachReview(id: string, review: ArticleReview): Promise<void>;
 }
 
 let cached: ArticleStore | null = null;
