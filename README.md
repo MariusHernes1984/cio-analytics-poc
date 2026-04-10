@@ -175,6 +175,8 @@ After deploy, the web URL is printed. Visit it — browser shows a native Basic 
 
 See `docs/AUTH_MIGRATION.md` for the documented path from shared password to Entra ID.
 
+Want to deploy your own instance? See **[docs/DEPLOY_YOUR_OWN.md](docs/DEPLOY_YOUR_OWN.md)** — a step-by-step guide (~20 min).
+
 ---
 
 ## License
