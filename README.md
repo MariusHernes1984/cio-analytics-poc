@@ -3,8 +3,12 @@
 Proof-of-concept webapp for **Atea CIO Analytics** that uses **Claude in Microsoft Foundry** to:
 
 1. **Write** new Norwegian CIO Analytics case studies from a brief + research material
-2. **Translate** existing Norwegian articles to English, Swedish, Danish, and Finnish
-3. Let editors **edit the system prompts live** via a web UI without redeploying
+2. **Review** — auto-scores articles on 6 quality dimensions and suggests improvements
+3. **Revise** — AI rewrites the article based on editor feedback or reviewer suggestions
+4. **Translate** existing Norwegian articles to English, Swedish, Danish, and Finnish
+5. Let editors **edit the system prompts live** via a web UI without redeploying
+
+The UI supports **English and Norwegian** with a one-click toggle.
 
 Built as a Next.js 15 App Router app, deployed to Azure App Service Linux (Sweden Central), hitting Claude via the official `@anthropic-ai/sdk` with a custom `baseURL`.
 
@@ -54,6 +58,8 @@ src/
     api/
       health/route.ts           # GET — pings Foundry
       write/route.ts            # POST — SSE writer streaming
+      review/route.ts           # POST — SSE reviewer (auto-quality scoring)
+      revise/route.ts           # POST — SSE revision streaming
       translate/route.ts        # POST — SSE translator streaming
       articles/                 # GET list + single
       prompts/[agent]/          # GET/PUT/POST prompts + /test dry-run
@@ -62,15 +68,18 @@ src/
     write/, translate/,
     articles/, prompts/         # UI pages
     layout.tsx, globals.css
-  components/                   # Client components (Nav, Editor, Viewer, Forms)
+  components/                   # Client components (Nav, Editor, Viewer, Forms,
+                                #   ReviewPanel, ArticleReviser)
   lib/
     env.ts                      # zod-validated env loader
     foundry/
       auth.ts                   # SEAM: api-key → managed identity (future)
       client.ts                 # cached Anthropic SDK with Foundry baseURL
     agents/
-      types.ts                  # shared WriterInput / TranslatorInput / events
-      writer.ts, translator.ts  # runners (AsyncGenerator of stream events)
+      types.ts                  # shared types, stream events, review types
+      writer.ts                 # writer runner (sonnet)
+      reviewer.ts               # quality reviewer (haiku, hardcoded prompt)
+      translator.ts             # translator runner (haiku)
     prompts/
       PromptStore.ts            # SEAM: interface + factory
       BlobPromptStore.ts        # prod impl
@@ -81,7 +90,11 @@ src/
       markdown.ts, docx.ts      # file-export helpers
     auth/
       requireSession.ts         # SEAM: stub for Entra ID (future)
-    streaming.ts                # SSE helpers (server)
+    i18n/
+      translations.ts           # EN/NO translation dictionary + t() helper
+      LanguageProvider.tsx       # client-side React context for language
+      getServerLang.ts           # server-side cookie reader
+    streaming.ts                # generic SSE helpers (server)
     sseClient.ts                # SSE helpers (browser)
   middleware.ts                 # HTTP Basic Auth (PoC gatekeeper)
 infra/
@@ -117,6 +130,8 @@ The managed identity for the App Service is already provisioned and has `Storage
 
 Prerequisites: [azd CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd), Azure subscription, a Foundry resource in Sweden Central with `claude-sonnet-4-6` and `claude-haiku-4-5` deployments.
 
+### Option A — azd (full infra + app)
+
 ```bash
 azd auth login
 azd env new cio-analytics-poc
@@ -127,6 +142,23 @@ azd up
 ```
 
 First `azd up` provisions infra + deploys in ~5–8 minutes. Subsequent `azd deploy` only ships the app (~1–2 min).
+
+### Option B — zip deploy (app only, infra already exists)
+
+```bash
+# Create zip with forward-slash paths (critical on Windows)
+python -c "
+import zipfile, os
+with zipfile.ZipFile('deploy.zip','w',zipfile.ZIP_DEFLATED) as zf:
+  for r,d,f in os.walk('.'):
+    d[:] = [x for x in d if x not in ('node_modules','.next','.git','.local-articles','.local-prompts','.claude')]
+    for n in f:
+      if n in ('.env.local','deploy.zip'): continue
+      p = os.path.join(r,n)
+      zf.write(p, os.path.relpath(p,'.').replace(os.sep,'/'))
+"
+az webapp deploy --name <app-name> --resource-group <rg> --src-path deploy.zip --type zip
+```
 
 After deploy, the web URL is printed. Visit it — browser shows a native Basic Auth prompt. Username can be anything (e.g. `admin`); password is what you set as `POC_PASSWORD`.
 
