@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { formatAmount } from "@/lib/cost";
 
 interface ModelRow {
   model: string;
@@ -31,8 +32,8 @@ interface Stats {
   byOperation: OpRow[];
 }
 
-function formatKr(n: number): string {
-  return `kr ${n.toFixed(2).replace(".", ",")}`;
+function formatKr(n: number, lang: "en" | "no"): string {
+  return formatAmount(n, lang);
 }
 
 function formatTokens(n: number): string {
@@ -91,7 +92,7 @@ export function StatisticsClient() {
           {t("stats.totalCost")}
         </div>
         <div className="text-3xl font-bold text-atea-navy">
-          {formatKr(stats.totalCostNOK)}
+          {formatKr(stats.totalCostNOK, lang)}
         </div>
         <div className="mt-1 text-xs text-black/40">
           {formatTokens(stats.totalInputTokens)} input + {formatTokens(stats.totalOutputTokens)} output tokens
@@ -122,7 +123,7 @@ export function StatisticsClient() {
                 <td className="px-5 py-2.5 text-right text-black/60">{row.count}</td>
                 <td className="px-5 py-2.5 text-right text-black/60">{formatTokens(row.inputTokens)}</td>
                 <td className="px-5 py-2.5 text-right text-black/60">{formatTokens(row.outputTokens)}</td>
-                <td className="px-5 py-2.5 text-right font-medium">{formatKr(row.costNOK)}</td>
+                <td className="px-5 py-2.5 text-right font-medium">{formatKr(row.costNOK, lang)}</td>
               </tr>
             ))}
           </tbody>
@@ -151,7 +152,7 @@ export function StatisticsClient() {
                 <td className="px-5 py-2.5 text-right text-black/60">{row.count}</td>
                 <td className="px-5 py-2.5 text-right text-black/60">{formatTokens(row.inputTokens)}</td>
                 <td className="px-5 py-2.5 text-right text-black/60">{formatTokens(row.outputTokens)}</td>
-                <td className="px-5 py-2.5 text-right font-medium">{formatKr(row.costNOK)}</td>
+                <td className="px-5 py-2.5 text-right font-medium">{formatKr(row.costNOK, lang)}</td>
               </tr>
             ))}
           </tbody>

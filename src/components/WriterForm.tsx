@@ -7,7 +7,7 @@ import { ReviewPanel } from "@/components/ReviewPanel";
 import { streamSse } from "@/lib/sseClient";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { ArticleReview, ResearchMaterial } from "@/lib/agents/types";
-import { formatCostNOK } from "@/lib/cost";
+import { formatCost } from "@/lib/cost";
 
 type RunStatus = "idle" | "streaming" | "done" | "error";
 type ReviewStatus = "idle" | "streaming" | "done" | "error";
@@ -24,7 +24,7 @@ interface RunMeta {
 
 export function WriterForm() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   const RESEARCH_KINDS: Array<{ value: ResearchMaterial["kind"]; label: string }> = [
     { value: "transcript", label: t("writer.kindTranscript") },
@@ -336,7 +336,7 @@ export function WriterForm() {
             {t("common.done")} · {meta.inputTokens} → {meta.outputTokens} tokens ·{" "}
             {meta.durationMs ? `${(meta.durationMs / 1000).toFixed(1)}s` : "—"} ·{" "}
             {meta.model && meta.inputTokens && meta.outputTokens
-              ? formatCostNOK(meta.model, meta.inputTokens, meta.outputTokens)
+              ? formatCost(meta.model, meta.inputTokens, meta.outputTokens, lang)
               : ""}
             {meta.warnings && meta.warnings.length > 0 && (
               <div className="mt-2 rounded bg-amber-50 px-2 py-1 text-amber-800">

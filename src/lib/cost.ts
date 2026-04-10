@@ -16,22 +16,43 @@ const PRICING: Record<string, { input: number; output: number }> = {
 
 const FALLBACK = { input: 3.0, output: 15.0 }; // assume sonnet if unknown
 
-export function estimateCostNOK(
+export function estimateCostUSD(
   model: string,
   inputTokens: number,
   outputTokens: number,
 ): number {
   const p = PRICING[model] ?? FALLBACK;
-  const usd = (inputTokens * p.input + outputTokens * p.output) / 1_000_000;
-  return usd * USD_TO_NOK;
+  return (inputTokens * p.input + outputTokens * p.output) / 1_000_000;
 }
 
-/** Format as "~kr 0,34" */
-export function formatCostNOK(
+export function estimateCostNOK(
   model: string,
   inputTokens: number,
   outputTokens: number,
+): number {
+  return estimateCostUSD(model, inputTokens, outputTokens) * USD_TO_NOK;
+}
+
+/** Format cost in the appropriate currency based on language. */
+export function formatCost(
+  model: string,
+  inputTokens: number,
+  outputTokens: number,
+  lang: "en" | "no" = "no",
 ): string {
+  if (lang === "en") {
+    const usd = estimateCostUSD(model, inputTokens, outputTokens);
+    return `~$${usd.toFixed(2)}`;
+  }
   const nok = estimateCostNOK(model, inputTokens, outputTokens);
   return `~kr ${nok.toFixed(2).replace(".", ",")}`;
+}
+
+/** Format a raw amount in the appropriate currency. */
+export function formatAmount(amount: number, lang: "en" | "no" = "no"): string {
+  if (lang === "en") {
+    const usd = amount / USD_TO_NOK;
+    return `$${usd.toFixed(2)}`;
+  }
+  return `kr ${amount.toFixed(2).replace(".", ",")}`;
 }

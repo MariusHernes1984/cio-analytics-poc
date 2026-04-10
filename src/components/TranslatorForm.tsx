@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { MarkdownView } from "@/components/MarkdownView";
 import { streamSse } from "@/lib/sseClient";
-import { formatCostNOK } from "@/lib/cost";
+import { formatCost } from "@/lib/cost";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import {
   TARGET_LANGUAGE_LABELS,
@@ -387,7 +387,7 @@ function ModeButton({
 }
 
 function LanguagePane({ language, state }: { language: TargetLanguage; state: LangState }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   return (
     <div className="overflow-hidden rounded-lg border border-black/10 bg-white">
@@ -417,7 +417,7 @@ function LanguagePane({ language, state }: { language: TargetLanguage; state: La
           {state.durationMs ? `${(state.durationMs / 1000).toFixed(1)}s` : "—"}
           {state.model && ` · ${state.model}`}
           {state.model && state.inputTokens && state.outputTokens
-            ? ` · ${formatCostNOK(state.model, state.inputTokens, state.outputTokens)}`
+            ? ` · ${formatCost(state.model, state.inputTokens, state.outputTokens, lang)}`
             : ""}
         </div>
       )}

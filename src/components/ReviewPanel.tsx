@@ -2,7 +2,7 @@
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { ArticleReview } from "@/lib/agents/types";
-import { formatCostNOK } from "@/lib/cost";
+import { formatCost } from "@/lib/cost";
 
 function scoreColor(score: number): string {
   if (score <= 2) return "bg-red-100 text-red-800";
@@ -23,7 +23,7 @@ export function ReviewPanel({
   review: ArticleReview;
   onFixIssues?: (feedback: string) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   function handleFix() {
     if (!onFixIssues) return;
@@ -99,7 +99,7 @@ export function ReviewPanel({
       <div className="text-[11px] text-black/40">
         {review.model} · {review.inputTokens} → {review.outputTokens} tokens ·{" "}
         {(review.durationMs / 1000).toFixed(1)}s ·{" "}
-        {formatCostNOK(review.model, review.inputTokens, review.outputTokens)}
+        {formatCost(review.model, review.inputTokens, review.outputTokens, lang)}
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ import { ReviewPanel } from "@/components/ReviewPanel";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { TARGET_LANGUAGE_LABELS, type TargetLanguage } from "@/lib/agents/types";
 import type { StoredArticle } from "@/lib/articles/ArticleStore";
-import { formatCostNOK } from "@/lib/cost";
+import { formatCost } from "@/lib/cost";
 
 type TabKey = "no" | TargetLanguage;
 
@@ -19,6 +19,7 @@ type TabKey = "no" | TargetLanguage;
 export function ArticleViewer({ article }: { article: StoredArticle }) {
   const { t } = useTranslation();
   const translatedLanguages = Object.keys(article.translations) as TargetLanguage[];
+  const { lang } = useTranslation();
   const [tab, setTab] = useState<TabKey>("no");
   const [isExporting, setIsExporting] = useState<false | "md" | "docx">(false);
   const [reviserFeedback, setReviserFeedback] = useState("");
@@ -68,7 +69,7 @@ export function ArticleViewer({ article }: { article: StoredArticle }) {
           Opprettet {new Date(article.createdAt).toLocaleString("nb-NO")} · modell{" "}
           {article.source.model} · prompt {article.source.promptVersion} ·{" "}
           {article.source.inputTokens} → {article.source.outputTokens} tokens ·{" "}
-          {formatCostNOK(article.source.model, article.source.inputTokens, article.source.outputTokens)}
+          {formatCost(article.source.model, article.source.inputTokens, article.source.outputTokens, lang)}
         </div>
       </header>
 
@@ -116,7 +117,7 @@ export function ArticleViewer({ article }: { article: StoredArticle }) {
             {t("viewer.translated")} {new Date(activeResult.createdAt).toLocaleString("nb-NO")} ·{" "}
             {activeResult.model} · prompt {activeResult.promptVersion} ·{" "}
             {activeResult.inputTokens} → {activeResult.outputTokens} tokens ·{" "}
-            {formatCostNOK(activeResult.model, activeResult.inputTokens, activeResult.outputTokens)}
+            {formatCost(activeResult.model, activeResult.inputTokens, activeResult.outputTokens, lang)}
           </>
         )}
         {tab === "no" && article.revisions && article.revisions.length > 0 && (
