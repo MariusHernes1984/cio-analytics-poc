@@ -19,6 +19,8 @@ const dict: Record<string, Record<UILang, string>> = {
   "nav.articlesDesc": { en: "All", no: "Alle" },
   "nav.prompts": { en: "Prompts", no: "Prompts" },
   "nav.promptsDesc": { en: "Edit agents", no: "Rediger agenter" },
+  "nav.statistics": { en: "Statistics", no: "Statistikk" },
+  "nav.statisticsDesc": { en: "Cost & usage", no: "Kostnad & bruk" },
   "nav.footer": { en: "Claude in Foundry · Sweden Central", no: "Claude i Foundry · Sweden Central" },
 
   // ── Common ─────────────────────────────────────────────
@@ -231,6 +233,24 @@ const dict: Record<string, Record<UILang, string>> = {
   "rollback.current": { en: "Current", no: "Gjeldende" },
   "rollback.setAsCurrent": { en: "Set as current", no: "Sett som gjeldende" },
   "rollback.failed": { en: "Rollback failed:", no: "Rollback feilet:" },
+
+  // ── Statistics ─────────────────────────────────────────
+  "stats.breadcrumb": { en: "STATISTICS", no: "STATISTIKK" },
+  "stats.title": { en: "Cost & usage", no: "Kostnad og bruk" },
+  "stats.articles": { en: "Articles", no: "Artikler" },
+  "stats.translations": { en: "Translations", no: "Oversettelser" },
+  "stats.revisions": { en: "Revisions", no: "Revisjoner" },
+  "stats.reviews": { en: "Reviews", no: "Vurderinger" },
+  "stats.totalCost": { en: "Total estimated cost", no: "Total estimert kostnad" },
+  "stats.byOperation": { en: "Cost by operation", no: "Kostnad per operasjon" },
+  "stats.byModel": { en: "Cost by model", no: "Kostnad per modell" },
+  "stats.operation": { en: "Operation", no: "Operasjon" },
+  "stats.model": { en: "Model", no: "Modell" },
+  "stats.count": { en: "Count", no: "Antall" },
+  "stats.inputTokens": { en: "Input tokens", no: "Input-tokens" },
+  "stats.outputTokens": { en: "Output tokens", no: "Output-tokens" },
+  "stats.cost": { en: "Cost (NOK)", no: "Kostnad (NOK)" },
+  "stats.disclaimer": { en: "Costs are estimates based on Azure AI Foundry list prices (USD) and a fixed exchange rate of 9.50 NOK/USD. Actual invoiced amounts may differ.", no: "Kostnadene er estimater basert på Azure AI Foundry listepriser (USD) og en fast vekslingskurs på 9,50 NOK/USD. Faktisk fakturert beløp kan avvike." },
 };
 
 /**

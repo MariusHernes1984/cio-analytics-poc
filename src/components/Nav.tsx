@@ -16,6 +16,7 @@ export function Nav() {
     { href: "/translate", label: t("nav.translate"), description: t("nav.translateDesc") },
     { href: "/articles", label: t("nav.articles"), description: t("nav.articlesDesc") },
     { href: "/prompts", label: t("nav.prompts"), description: t("nav.promptsDesc") },
+    { href: "/statistics", label: t("nav.statistics"), description: t("nav.statisticsDesc") },
   ];
 
   return (
