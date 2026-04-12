@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getFoundryClient } from "@/lib/foundry/client";
 import { requireSession } from "@/lib/auth/requireSession";
 import { SSE_HEADERS } from "@/lib/streaming";
+import { parseThinkingConfig, getThinkingParams } from "@/lib/agents/thinking";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,13 +58,15 @@ export async function POST(
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ type: "start", model: parsed.data.model })}\n\n`),
         );
+        const thinking = parseThinkingConfig(parsed.data.model);
         const messageStream = await client.messages.stream({
-          model: parsed.data.model,
-          max_tokens: parsed.data.maxTokens,
-          temperature: parsed.data.temperature,
+          model: thinking.apiModel,
+          ...(thinking.isExtended
+            ? getThinkingParams(thinking, parsed.data.maxTokens)
+            : { max_tokens: parsed.data.maxTokens, temperature: parsed.data.temperature }),
           system: parsed.data.systemPrompt,
           messages: [{ role: "user", content: parsed.data.userMessage }],
-        });
+        } as Parameters<typeof client.messages.stream>[0]);
         for await (const event of messageStream) {
           if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
             const text = event.delta.text;

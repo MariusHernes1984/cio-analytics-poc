@@ -22,6 +22,20 @@ interface OpRow {
   count: number;
 }
 
+interface DimensionAvg {
+  dimension: string;
+  label: string;
+  avgScore: number;
+  count: number;
+}
+
+interface QualityGroup {
+  group: string;
+  avgOverall: number;
+  count: number;
+  dimensions: DimensionAvg[];
+}
+
 interface Stats {
   totalArticles: number;
   totalTranslations: number;
@@ -33,6 +47,8 @@ interface Stats {
   totalCostNOK: number;
   byModel: ModelRow[];
   byOperation: OpRow[];
+  qualityByModel: QualityGroup[];
+  qualityByPromptVersion: QualityGroup[];
 }
 
 function formatKr(n: number, lang: "en" | "no"): string {
@@ -167,6 +183,24 @@ export function StatisticsClient() {
         </table>
       </div>
 
+      {/* Quality by model */}
+      <QualitySection
+        title={t("eval.qualityByModel")}
+        groupLabel={t("eval.group")}
+        groups={stats.qualityByModel}
+        noDataText={t("eval.noReviews")}
+        lang={lang}
+      />
+
+      {/* Quality by prompt version */}
+      <QualitySection
+        title={t("eval.qualityByPrompt")}
+        groupLabel={t("eval.promptGroup")}
+        groups={stats.qualityByPromptVersion}
+        noDataText={t("eval.noReviews")}
+        lang={lang}
+      />
+
       {/* Disclaimer */}
       <div className="text-[11px] text-black/30">
         {t("stats.disclaimer")}
@@ -180,6 +214,98 @@ function Card({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border border-black/10 bg-white px-5 py-4">
       <div className="text-[11px] font-semibold uppercase tracking-wider text-black/50">{label}</div>
       <div className="mt-1 text-2xl font-bold text-atea-navy">{value}</div>
+    </div>
+  );
+}
+
+function scoreColor(score: number): string {
+  if (score >= 4.5) return "bg-green-100 text-green-800";
+  if (score >= 3.5) return "bg-emerald-50 text-emerald-700";
+  if (score >= 2.5) return "bg-amber-50 text-amber-700";
+  return "bg-red-50 text-red-700";
+}
+
+function ScoreBadge({ score }: { score: number }) {
+  return (
+    <span className={`inline-block rounded px-2 py-0.5 text-sm font-bold ${scoreColor(score)}`}>
+      {score.toFixed(1)}
+    </span>
+  );
+}
+
+function ScoreBar({ score }: { score: number }) {
+  const pct = (score / 5) * 100;
+  return (
+    <div className="flex items-center gap-2">
+      <div className="h-2 w-24 overflow-hidden rounded-full bg-black/5">
+        <div
+          className={`h-full rounded-full ${score >= 4 ? "bg-green-500" : score >= 3 ? "bg-amber-400" : "bg-red-400"}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="text-xs font-medium text-black/60">{score.toFixed(1)}</span>
+    </div>
+  );
+}
+
+function QualitySection({
+  title,
+  groupLabel,
+  groups,
+  noDataText,
+  lang,
+}: {
+  title: string;
+  groupLabel: string;
+  groups: QualityGroup[];
+  noDataText: string;
+  lang: "en" | "no";
+}) {
+  const { t } = useTranslation();
+
+  if (groups.length === 0) {
+    return (
+      <div className="rounded-lg border border-black/10 bg-white p-6">
+        <div className="text-sm font-semibold text-atea-navy">{title}</div>
+        <div className="mt-3 text-xs text-black/40">{noDataText}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-black/10 bg-white">
+      <div className="border-b border-black/10 px-5 py-3">
+        <div className="text-sm font-semibold text-atea-navy">{title}</div>
+      </div>
+      <div className="divide-y divide-black/5">
+        {groups.map((g) => (
+          <div key={g.group} className="px-5 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-medium text-atea-navy">{g.group}</span>
+                <span className="ml-2 text-[11px] text-black/40">
+                  {g.count} {t("eval.reviewedArticles").toLowerCase()}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-black/40">{t("eval.avgOverall")}</span>
+                <ScoreBadge score={g.avgOverall} />
+                <span className="text-[11px] text-black/30">{t("eval.scoreOf5")}</span>
+              </div>
+            </div>
+            {g.dimensions.length > 0 && (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {g.dimensions.map((d) => (
+                  <div key={d.dimension} className="flex items-center justify-between rounded bg-black/[0.02] px-3 py-1.5">
+                    <span className="text-xs text-black/60">{d.label}</span>
+                    <ScoreBar score={d.avgScore} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

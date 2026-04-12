@@ -37,15 +37,23 @@ export function parseThinkingConfig(model: string): ThinkingConfig {
  * Build the extra parameters for `client.messages.stream()` when extended
  * thinking is enabled. Merge these into the call options.
  *
+ * Important: the API requires max_tokens > thinking.budget_tokens. The
+ * `max_tokens` ceiling covers BOTH thinking and output tokens. So we set
+ * it to budget + the user's desired output limit.
+ *
  * Note: extended thinking requires temperature=1 (Anthropic constraint).
+ *
+ * @param config - thinking config from parseThinkingConfig
+ * @param outputMaxTokens - the user's desired max output tokens (from prompt settings)
  */
-export function getThinkingParams(config: ThinkingConfig): Record<string, unknown> {
+export function getThinkingParams(config: ThinkingConfig, outputMaxTokens: number): Record<string, unknown> {
   if (!config.isExtended) return {};
   return {
     thinking: {
       type: "enabled",
       budget_tokens: THINKING_BUDGET,
     },
+    max_tokens: THINKING_BUDGET + outputMaxTokens,
     temperature: 1, // required by the API when thinking is enabled
   };
 }

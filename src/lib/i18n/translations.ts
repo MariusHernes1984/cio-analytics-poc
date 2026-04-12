@@ -252,6 +252,17 @@ const dict: Record<string, Record<UILang, string>> = {
   "stats.thinkingTokens": { en: "Thinking tokens", no: "Thinking-tokens" },
   "stats.cost": { en: "Cost (USD)", no: "Kostnad (NOK)" },
   "stats.disclaimer": { en: "Costs are estimates based on Azure AI Foundry list prices (USD) and a fixed exchange rate of 9.50 NOK/USD. Actual invoiced amounts may differ.", no: "Kostnadene er estimater basert på Azure AI Foundry listepriser (USD) og en fast vekslingskurs på 9,50 NOK/USD. Faktisk fakturert beløp kan avvike." },
+
+  // ── Quality evaluation ────────────────────────────────
+  "eval.qualityByModel": { en: "Quality scores by model", no: "Kvalitetsscorer per modell" },
+  "eval.qualityByPrompt": { en: "Quality scores by prompt version", no: "Kvalitetsscorer per prompt-versjon" },
+  "eval.group": { en: "Model", no: "Modell" },
+  "eval.promptGroup": { en: "Prompt version", no: "Prompt-versjon" },
+  "eval.avgOverall": { en: "Avg. overall", no: "Snitt totalt" },
+  "eval.reviewedArticles": { en: "Reviewed", no: "Vurdert" },
+  "eval.noReviews": { en: "No quality reviews yet. Write and review articles to see scores here.", no: "Ingen kvalitetsvurderinger ennå. Skriv og vurder artikler for å se scorer her." },
+  "eval.dimensions": { en: "Dimension scores", no: "Dimensjons-scorer" },
+  "eval.scoreOf5": { en: "of 5", no: "av 5" },
 };
 
 /**

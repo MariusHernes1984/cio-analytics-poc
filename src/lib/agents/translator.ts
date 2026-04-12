@@ -42,10 +42,9 @@ export async function* runTranslator(
   try {
     const stream = await client.messages.stream({
       model: thinking.apiModel,
-      max_tokens: prompt.draft.maxTokens,
       ...(thinking.isExtended
-        ? getThinkingParams(thinking)
-        : { temperature: prompt.draft.temperature }),
+        ? getThinkingParams(thinking, prompt.draft.maxTokens)
+        : { max_tokens: prompt.draft.maxTokens, temperature: prompt.draft.temperature }),
       system,
       messages: [{ role: "user", content: userMessage }],
     } as Parameters<typeof client.messages.stream>[0]);

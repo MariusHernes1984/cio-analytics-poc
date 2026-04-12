@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth/requireSession";
 import { getArticleStore } from "@/lib/articles/ArticleStore";
 import type { StoredArticle } from "@/lib/articles/ArticleStore";
+import type { ArticleReview } from "@/lib/agents/types";
 import { estimateCostNOK } from "@/lib/cost";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +24,59 @@ interface OperationStats {
   costNOK: number;
   count: number;
 }
+
+/* ── Quality evaluation aggregation ─────────────────────── */
+
+interface DimensionAvg {
+  dimension: string;
+  label: string;
+  avgScore: number;
+  count: number;
+}
+
+interface QualityByGroup {
+  group: string; // model name or prompt version
+  avgOverall: number;
+  count: number;
+  dimensions: DimensionAvg[];
+}
+
+interface QualityAccumulator {
+  totalScore: number;
+  count: number;
+  dimensions: Map<string, { label: string; totalScore: number; count: number }>;
+}
+
+function newAccumulator(): QualityAccumulator {
+  return { totalScore: 0, count: 0, dimensions: new Map() };
+}
+
+function addReview(acc: QualityAccumulator, review: ArticleReview) {
+  acc.totalScore += review.overallScore;
+  acc.count += 1;
+  for (const dim of review.dimensions) {
+    const d = acc.dimensions.get(dim.dimension) ?? { label: dim.label, totalScore: 0, count: 0 };
+    d.totalScore += dim.score;
+    d.count += 1;
+    acc.dimensions.set(dim.dimension, d);
+  }
+}
+
+function finalizeAccumulator(group: string, acc: QualityAccumulator): QualityByGroup {
+  return {
+    group,
+    avgOverall: acc.count > 0 ? Math.round((acc.totalScore / acc.count) * 10) / 10 : 0,
+    count: acc.count,
+    dimensions: [...acc.dimensions.entries()].map(([dim, d]) => ({
+      dimension: dim,
+      label: d.label,
+      avgScore: d.count > 0 ? Math.round((d.totalScore / d.count) * 10) / 10 : 0,
+      count: d.count,
+    })),
+  };
+}
+
+/* ── Cost aggregation ──────────────────────────────────── */
 
 function addResult(
   byModel: Map<string, ModelStats>,
@@ -70,6 +124,10 @@ export async function GET() {
   let totalRevisions = 0;
   let totalReviews = 0;
 
+  // Quality evaluation accumulators
+  const qualByModel = new Map<string, QualityAccumulator>();
+  const qualByPrompt = new Map<string, QualityAccumulator>();
+
   for (const item of items) {
     const article: StoredArticle | null = await store.get(item.id);
     if (!article) continue;
@@ -98,6 +156,16 @@ export async function GET() {
     if (article.review) {
       totalReviews++;
       addResult(byModel, byOp, article.review.model, article.review.inputTokens, article.review.outputTokens, "reviewer", article.review.thinkingTokens ?? 0);
+
+      // Quality aggregation — group by the WRITER model and prompt version
+      const writerModel = article.source.model;
+      const writerPrompt = article.source.promptVersion;
+
+      if (!qualByModel.has(writerModel)) qualByModel.set(writerModel, newAccumulator());
+      addReview(qualByModel.get(writerModel)!, article.review);
+
+      if (!qualByPrompt.has(writerPrompt)) qualByPrompt.set(writerPrompt, newAccumulator());
+      addReview(qualByPrompt.get(writerPrompt)!, article.review);
     }
   }
 
@@ -105,6 +173,15 @@ export async function GET() {
   const totalOutputTokens = [...byModel.values()].reduce((s, m) => s + m.outputTokens, 0);
   const totalThinkingTokens = [...byModel.values()].reduce((s, m) => s + m.thinkingTokens, 0);
   const totalCostNOK = [...byModel.values()].reduce((s, m) => s + m.costNOK, 0);
+
+  // Finalize quality accumulators
+  const qualityByModel = [...qualByModel.entries()]
+    .map(([group, acc]) => finalizeAccumulator(group, acc))
+    .sort((a, b) => b.avgOverall - a.avgOverall);
+
+  const qualityByPromptVersion = [...qualByPrompt.entries()]
+    .map(([group, acc]) => finalizeAccumulator(group, acc))
+    .sort((a, b) => b.avgOverall - a.avgOverall);
 
   return NextResponse.json({
     totalArticles,
@@ -117,5 +194,7 @@ export async function GET() {
     totalCostNOK,
     byModel: [...byModel.values()].sort((a, b) => b.costNOK - a.costNOK),
     byOperation: [...byOp.values()].sort((a, b) => b.costNOK - a.costNOK),
+    qualityByModel,
+    qualityByPromptVersion,
   });
 }
