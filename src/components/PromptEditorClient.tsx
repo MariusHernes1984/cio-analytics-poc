@@ -11,9 +11,10 @@ import type { AgentId } from "@/lib/agents/types";
 import type { PromptVersion, PromptVersionMeta } from "@/lib/prompts/PromptStore";
 
 const AVAILABLE_MODELS = [
-  { id: "claude-opus-4-6", label: "Opus 4.6 (maks kvalitet)" },
-  { id: "claude-sonnet-4-6", label: "Sonnet 4.6 (balansert)" },
-  { id: "claude-haiku-4-5", label: "Haiku 4.5 (rask/billig)" },
+  { id: "claude-opus-4-6-extended", label: "Opus 4.6 Extended Thinking" },
+  { id: "claude-opus-4-6", label: "Opus 4.6" },
+  { id: "claude-sonnet-4-6", label: "Sonnet 4.6" },
+  { id: "claude-haiku-4-5", label: "Haiku 4.5" },
 ];
 
 type SaveState = "idle" | "saving" | "saved" | "error";
