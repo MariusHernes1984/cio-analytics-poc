@@ -21,6 +21,7 @@ const EnvSchema = z.object({
   AZURE_STORAGE_ACCOUNT: z.string().optional(),
   AZURE_STORAGE_CONTAINER_PROMPTS: z.string().default("prompts"),
   AZURE_STORAGE_CONTAINER_ARTICLES: z.string().default("articles"),
+  AZURE_STORAGE_CONTAINER_SOURCES: z.string().default("sources"),
 
   // Auth (PoC) — empty means "no auth" (dev only)
   POC_PASSWORD: z.string().optional(),

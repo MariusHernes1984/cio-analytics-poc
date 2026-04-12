@@ -19,6 +19,8 @@ const dict: Record<string, Record<UILang, string>> = {
   "nav.articlesDesc": { en: "All", no: "Alle" },
   "nav.prompts": { en: "Prompts", no: "Prompts" },
   "nav.promptsDesc": { en: "Edit agents", no: "Rediger agenter" },
+  "nav.sources": { en: "Sources", no: "Kilder" },
+  "nav.sourcesDesc": { en: "Approved references", no: "Godkjente referanser" },
   "nav.statistics": { en: "Statistics", no: "Statistikk" },
   "nav.statisticsDesc": { en: "Cost & usage", no: "Kostnad & bruk" },
   "nav.footer": { en: "Claude in Foundry · Sweden Central", no: "Claude i Foundry · Sweden Central" },
@@ -252,6 +254,21 @@ const dict: Record<string, Record<UILang, string>> = {
   "stats.thinkingTokens": { en: "Thinking tokens", no: "Thinking-tokens" },
   "stats.cost": { en: "Cost (USD)", no: "Kostnad (NOK)" },
   "stats.disclaimer": { en: "Costs are estimates based on Azure AI Foundry list prices (USD) and a fixed exchange rate of 9.50 NOK/USD. Actual invoiced amounts may differ.", no: "Kostnadene er estimater basert på Azure AI Foundry listepriser (USD) og en fast vekslingskurs på 9,50 NOK/USD. Faktisk fakturert beløp kan avvike." },
+
+  // ── Sources ────────────────────────────────────────────
+  "sources.breadcrumb": { en: "SOURCES", no: "KILDER" },
+  "sources.title": { en: "Approved reference sources", no: "Godkjente referansekilder" },
+  "sources.description": { en: "Manage trusted domains and organisations that can be used as references in articles.", no: "Administrer godkjente domener og organisasjoner som kan brukes som referanser i artikler." },
+  "sources.addTitle": { en: "Add new source", no: "Legg til ny kilde" },
+  "sources.nameLabel": { en: "Name", no: "Navn" },
+  "sources.namePlaceholder": { en: "e.g. Gartner", no: "f.eks. Gartner" },
+  "sources.domainLabel": { en: "Domain", no: "Domene" },
+  "sources.domainPlaceholder": { en: "e.g. gartner.com", no: "f.eks. gartner.com" },
+  "sources.descriptionLabel": { en: "Description (optional)", no: "Beskrivelse (valgfritt)" },
+  "sources.descriptionPlaceholder": { en: "What kind of references?", no: "Hva slags referanser?" },
+  "sources.addButton": { en: "Add source", no: "Legg til kilde" },
+  "sources.listTitle": { en: "Approved sources", no: "Godkjente kilder" },
+  "sources.empty": { en: "No approved sources yet. Add your first trusted reference source above.", no: "Ingen godkjente kilder ennå. Legg til din første referansekilde ovenfor." },
 
   // ── Quality evaluation ────────────────────────────────
   "eval.qualityByModel": { en: "Quality scores by model", no: "Kvalitetsscorer per modell" },
