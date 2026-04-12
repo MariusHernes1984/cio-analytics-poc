@@ -249,6 +249,7 @@ const dict: Record<string, Record<UILang, string>> = {
   "stats.count": { en: "Count", no: "Antall" },
   "stats.inputTokens": { en: "Input tokens", no: "Input-tokens" },
   "stats.outputTokens": { en: "Output tokens", no: "Output-tokens" },
+  "stats.thinkingTokens": { en: "Thinking tokens", no: "Thinking-tokens" },
   "stats.cost": { en: "Cost (USD)", no: "Kostnad (NOK)" },
   "stats.disclaimer": { en: "Costs are estimates based on Azure AI Foundry list prices (USD) and a fixed exchange rate of 9.50 NOK/USD. Actual invoiced amounts may differ.", no: "Kostnadene er estimater basert på Azure AI Foundry listepriser (USD) og en fast vekslingskurs på 9,50 NOK/USD. Faktisk fakturert beløp kan avvike." },
 };

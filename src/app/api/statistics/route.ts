@@ -10,6 +10,7 @@ interface ModelStats {
   model: string;
   inputTokens: number;
   outputTokens: number;
+  thinkingTokens: number;
   costNOK: number;
   count: number;
 }
@@ -18,6 +19,7 @@ interface OperationStats {
   operation: string;
   inputTokens: number;
   outputTokens: number;
+  thinkingTokens: number;
   costNOK: number;
   count: number;
 }
@@ -29,21 +31,24 @@ function addResult(
   inputTokens: number,
   outputTokens: number,
   operation: string,
+  thinkingTokens: number = 0,
 ) {
-  const cost = estimateCostNOK(model, inputTokens, outputTokens);
+  const cost = estimateCostNOK(model, inputTokens, outputTokens, thinkingTokens);
 
   // By model
-  const m = byModel.get(model) ?? { model, inputTokens: 0, outputTokens: 0, costNOK: 0, count: 0 };
+  const m = byModel.get(model) ?? { model, inputTokens: 0, outputTokens: 0, thinkingTokens: 0, costNOK: 0, count: 0 };
   m.inputTokens += inputTokens;
   m.outputTokens += outputTokens;
+  m.thinkingTokens += thinkingTokens;
   m.costNOK += cost;
   m.count += 1;
   byModel.set(model, m);
 
   // By operation
-  const o = byOp.get(operation) ?? { operation, inputTokens: 0, outputTokens: 0, costNOK: 0, count: 0 };
+  const o = byOp.get(operation) ?? { operation, inputTokens: 0, outputTokens: 0, thinkingTokens: 0, costNOK: 0, count: 0 };
   o.inputTokens += inputTokens;
   o.outputTokens += outputTokens;
+  o.thinkingTokens += thinkingTokens;
   o.costNOK += cost;
   o.count += 1;
   byOp.set(operation, o);
@@ -72,13 +77,13 @@ export async function GET() {
     totalArticles++;
 
     // Writer (current source)
-    addResult(byModel, byOp, article.source.model, article.source.inputTokens, article.source.outputTokens, "writer");
+    addResult(byModel, byOp, article.source.model, article.source.inputTokens, article.source.outputTokens, "writer", article.source.thinkingTokens ?? 0);
 
     // Revisions
     if (article.revisions) {
       for (const rev of article.revisions) {
         totalRevisions++;
-        addResult(byModel, byOp, rev.result.model, rev.result.inputTokens, rev.result.outputTokens, "reviser");
+        addResult(byModel, byOp, rev.result.model, rev.result.inputTokens, rev.result.outputTokens, "reviser", rev.result.thinkingTokens ?? 0);
       }
     }
 
@@ -86,18 +91,19 @@ export async function GET() {
     for (const [, result] of Object.entries(article.translations)) {
       if (!result) continue;
       totalTranslations++;
-      addResult(byModel, byOp, result.model, result.inputTokens, result.outputTokens, "translator");
+      addResult(byModel, byOp, result.model, result.inputTokens, result.outputTokens, "translator", result.thinkingTokens ?? 0);
     }
 
     // Review
     if (article.review) {
       totalReviews++;
-      addResult(byModel, byOp, article.review.model, article.review.inputTokens, article.review.outputTokens, "reviewer");
+      addResult(byModel, byOp, article.review.model, article.review.inputTokens, article.review.outputTokens, "reviewer", article.review.thinkingTokens ?? 0);
     }
   }
 
   const totalInputTokens = [...byModel.values()].reduce((s, m) => s + m.inputTokens, 0);
   const totalOutputTokens = [...byModel.values()].reduce((s, m) => s + m.outputTokens, 0);
+  const totalThinkingTokens = [...byModel.values()].reduce((s, m) => s + m.thinkingTokens, 0);
   const totalCostNOK = [...byModel.values()].reduce((s, m) => s + m.costNOK, 0);
 
   return NextResponse.json({
@@ -107,6 +113,7 @@ export async function GET() {
     totalReviews,
     totalInputTokens,
     totalOutputTokens,
+    totalThinkingTokens,
     totalCostNOK,
     byModel: [...byModel.values()].sort((a, b) => b.costNOK - a.costNOK),
     byOperation: [...byOp.values()].sort((a, b) => b.costNOK - a.costNOK),

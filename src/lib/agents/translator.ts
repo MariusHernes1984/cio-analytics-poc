@@ -8,6 +8,7 @@ import type {
   TargetLanguage,
   TranslatorInput,
 } from "@/lib/agents/types";
+import { parseThinkingConfig, getThinkingParams } from "@/lib/agents/thinking";
 
 /**
  * Run the translator agent and yield streaming events.
@@ -29,21 +30,25 @@ export async function* runTranslator(
   const system = prompt.draft.systemPrompt;
   const userMessage = buildTranslatorUserMessage(input);
   const client = getFoundryClient();
+  const thinking = parseThinkingConfig(prompt.draft.model);
 
   yield { type: "start", model: prompt.draft.model, promptVersion: prompt.version };
 
   let fullText = "";
   let inputTokens = 0;
   let outputTokens = 0;
+  let thinkingTokens = 0;
 
   try {
     const stream = await client.messages.stream({
-      model: prompt.draft.model,
+      model: thinking.apiModel,
       max_tokens: prompt.draft.maxTokens,
-      temperature: prompt.draft.temperature,
+      ...(thinking.isExtended
+        ? getThinkingParams(thinking)
+        : { temperature: prompt.draft.temperature }),
       system,
       messages: [{ role: "user", content: userMessage }],
-    });
+    } as Parameters<typeof client.messages.stream>[0]);
 
     for await (const event of stream) {
       if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
@@ -56,6 +61,8 @@ export async function* runTranslator(
     const final = await stream.finalMessage();
     inputTokens = final.usage.input_tokens;
     outputTokens = final.usage.output_tokens;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    thinkingTokens = (final.usage as any).thinking_tokens ?? 0;
   } catch (error) {
     yield { type: "error", message: error instanceof Error ? error.message : String(error) };
     return;
@@ -68,6 +75,7 @@ export async function* runTranslator(
     model: prompt.draft.model,
     inputTokens,
     outputTokens,
+    ...(thinkingTokens > 0 ? { thinkingTokens } : {}),
     durationMs: Date.now() - start,
     markdown: fullText,
     warnings: [],

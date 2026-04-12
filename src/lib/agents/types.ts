@@ -62,6 +62,8 @@ export interface AgentRunResult {
   model: string;
   inputTokens: number;
   outputTokens: number;
+  /** Tokens used for extended thinking (Opus extended only). */
+  thinkingTokens?: number;
   durationMs: number;
   markdown: string;
   warnings: string[];
@@ -95,6 +97,7 @@ export interface ArticleReview {
   model: string;
   inputTokens: number;
   outputTokens: number;
+  thinkingTokens?: number;
   durationMs: number;
   createdAt: string;
 }

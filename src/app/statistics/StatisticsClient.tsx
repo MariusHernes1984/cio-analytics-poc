@@ -8,6 +8,7 @@ interface ModelRow {
   model: string;
   inputTokens: number;
   outputTokens: number;
+  thinkingTokens: number;
   costNOK: number;
   count: number;
 }
@@ -16,6 +17,7 @@ interface OpRow {
   operation: string;
   inputTokens: number;
   outputTokens: number;
+  thinkingTokens: number;
   costNOK: number;
   count: number;
 }
@@ -27,6 +29,7 @@ interface Stats {
   totalReviews: number;
   totalInputTokens: number;
   totalOutputTokens: number;
+  totalThinkingTokens: number;
   totalCostNOK: number;
   byModel: ModelRow[];
   byOperation: OpRow[];
@@ -95,7 +98,8 @@ export function StatisticsClient() {
           {formatKr(stats.totalCostNOK, lang)}
         </div>
         <div className="mt-1 text-xs text-black/40">
-          {formatTokens(stats.totalInputTokens)} input + {formatTokens(stats.totalOutputTokens)} output tokens
+          {formatTokens(stats.totalInputTokens)} input + {formatTokens(stats.totalOutputTokens)} output
+          {stats.totalThinkingTokens > 0 && ` + ${formatTokens(stats.totalThinkingTokens)} thinking`} tokens
         </div>
       </div>
 
@@ -111,6 +115,7 @@ export function StatisticsClient() {
               <th className="px-5 py-2 text-right">{t("stats.count")}</th>
               <th className="px-5 py-2 text-right">{t("stats.inputTokens")}</th>
               <th className="px-5 py-2 text-right">{t("stats.outputTokens")}</th>
+              <th className="px-5 py-2 text-right">{t("stats.thinkingTokens")}</th>
               <th className="px-5 py-2 text-right">{t("stats.cost")}</th>
             </tr>
           </thead>
@@ -123,6 +128,7 @@ export function StatisticsClient() {
                 <td className="px-5 py-2.5 text-right text-black/60">{row.count}</td>
                 <td className="px-5 py-2.5 text-right text-black/60">{formatTokens(row.inputTokens)}</td>
                 <td className="px-5 py-2.5 text-right text-black/60">{formatTokens(row.outputTokens)}</td>
+                <td className="px-5 py-2.5 text-right text-black/60">{row.thinkingTokens > 0 ? formatTokens(row.thinkingTokens) : "—"}</td>
                 <td className="px-5 py-2.5 text-right font-medium">{formatKr(row.costNOK, lang)}</td>
               </tr>
             ))}
@@ -142,6 +148,7 @@ export function StatisticsClient() {
               <th className="px-5 py-2 text-right">{t("stats.count")}</th>
               <th className="px-5 py-2 text-right">{t("stats.inputTokens")}</th>
               <th className="px-5 py-2 text-right">{t("stats.outputTokens")}</th>
+              <th className="px-5 py-2 text-right">{t("stats.thinkingTokens")}</th>
               <th className="px-5 py-2 text-right">{t("stats.cost")}</th>
             </tr>
           </thead>
@@ -152,6 +159,7 @@ export function StatisticsClient() {
                 <td className="px-5 py-2.5 text-right text-black/60">{row.count}</td>
                 <td className="px-5 py-2.5 text-right text-black/60">{formatTokens(row.inputTokens)}</td>
                 <td className="px-5 py-2.5 text-right text-black/60">{formatTokens(row.outputTokens)}</td>
+                <td className="px-5 py-2.5 text-right text-black/60">{row.thinkingTokens > 0 ? formatTokens(row.thinkingTokens) : "—"}</td>
                 <td className="px-5 py-2.5 text-right font-medium">{formatKr(row.costNOK, lang)}</td>
               </tr>
             ))}

@@ -18,6 +18,7 @@ interface RunMeta {
   articleId?: string;
   inputTokens?: number;
   outputTokens?: number;
+  thinkingTokens?: number;
   durationMs?: number;
   warnings?: string[];
 }
@@ -90,6 +91,7 @@ export function WriterForm() {
                   articleId: string;
                   inputTokens: number;
                   outputTokens: number;
+                  thinkingTokens?: number;
                   durationMs: number;
                   warnings: string[];
                 }
@@ -100,6 +102,7 @@ export function WriterForm() {
               articleId: r?.articleId,
               inputTokens: r?.inputTokens,
               outputTokens: r?.outputTokens,
+              thinkingTokens: r?.thinkingTokens,
               durationMs: r?.durationMs,
               warnings: r?.warnings,
             }));
@@ -333,10 +336,11 @@ export function WriterForm() {
 
         {status === "done" && (
           <footer className="mt-6 border-t border-black/10 pt-3 text-[11px] text-black/50">
-            {t("common.done")} · {meta.inputTokens} → {meta.outputTokens} tokens ·{" "}
+            {t("common.done")} · {meta.inputTokens} → {meta.outputTokens} tokens
+            {meta.thinkingTokens ? ` · ${meta.thinkingTokens} thinking` : ""} ·{" "}
             {meta.durationMs ? `${(meta.durationMs / 1000).toFixed(1)}s` : "—"} ·{" "}
             {meta.model && meta.inputTokens && meta.outputTokens
-              ? formatCost(meta.model, meta.inputTokens, meta.outputTokens, lang)
+              ? formatCost(meta.model, meta.inputTokens, meta.outputTokens, lang, meta.thinkingTokens ?? 0)
               : ""}
             {meta.warnings && meta.warnings.length > 0 && (
               <div className="mt-2 rounded bg-amber-50 px-2 py-1 text-amber-800">
