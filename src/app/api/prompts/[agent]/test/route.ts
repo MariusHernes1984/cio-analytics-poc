@@ -1,9 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { getFoundryClient } from "@/lib/foundry/client";
+import { streamFoundryMessages } from "@/lib/foundry/messages";
 import { requireSession } from "@/lib/auth/requireSession";
 import { SSE_HEADERS } from "@/lib/streaming";
-import { parseThinkingConfig, getThinkingParams } from "@/lib/agents/thinking";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,7 +48,6 @@ export async function POST(
     );
   }
 
-  const client = getFoundryClient();
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream<Uint8Array>({
@@ -58,30 +56,32 @@ export async function POST(
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ type: "start", model: parsed.data.model })}\n\n`),
         );
-        const thinking = parseThinkingConfig(parsed.data.model);
-        const messageStream = await client.messages.stream({
-          model: thinking.apiModel,
-          ...(thinking.isExtended
-            ? getThinkingParams(thinking, parsed.data.maxTokens)
-            : { max_tokens: parsed.data.maxTokens, temperature: parsed.data.temperature }),
+        const messageStream = streamFoundryMessages({
+          model: parsed.data.model,
+          maxTokens: parsed.data.maxTokens,
+          temperature: parsed.data.temperature,
           system: parsed.data.systemPrompt,
           messages: [{ role: "user", content: parsed.data.userMessage }],
-        } as Parameters<typeof client.messages.stream>[0]);
+        });
+        let inputTokens = 0;
+        let outputTokens = 0;
         for await (const event of messageStream) {
-          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-            const text = event.delta.text;
+          if (event.type === "delta") {
+            const text = event.text;
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify({ type: "delta", text })}\n\n`),
             );
+          } else {
+            inputTokens = event.inputTokens;
+            outputTokens = event.outputTokens;
           }
         }
-        const final = await messageStream.finalMessage();
         controller.enqueue(
           encoder.encode(
             `data: ${JSON.stringify({
               type: "done",
-              inputTokens: final.usage.input_tokens,
-              outputTokens: final.usage.output_tokens,
+              inputTokens,
+              outputTokens,
             })}\n\n`,
           ),
         );

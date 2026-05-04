@@ -11,6 +11,7 @@ import type { AgentId } from "@/lib/agents/types";
 import type { PromptVersion, PromptVersionMeta } from "@/lib/prompts/PromptStore";
 
 const AVAILABLE_MODELS = [
+  { id: "gpt-5.5", label: "GPT-5.5" },
   { id: "claude-opus-4-6-extended", label: "Opus 4.6 Extended Thinking" },
   { id: "claude-opus-4-6", label: "Opus 4.6" },
   { id: "claude-sonnet-4-6", label: "Sonnet 4.6" },

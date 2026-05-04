@@ -12,7 +12,7 @@ Denne guiden er for deg som skal redigere system-promptene til Writer- og Transl
 ## Arbeidsflyt
 
 1. **Åpne editor-en.** Gjeldende versjon er lastet automatisk.
-2. **Rediger system-prompt** i editor-panen til venstre. Du kan også bytte modell (Haiku 4.5, Sonnet 4.6, Opus 4.6), endre `max_tokens` og temperatur.
+2. **Rediger system-prompt** i editor-panen til venstre. Du kan også bytte modell (GPT-5.5, Haiku 4.5, Sonnet 4.6, Opus 4.6), endre `max_tokens` og temperatur.
 3. **Test først.** Skriv en realistisk test-input i test-panen til høyre, klikk **Kjør test**. Dette sender utkastet til Foundry uten å lagre noe. Du ser output streame i sanntid.
 4. **Iterér.** Juster prompten, kjør test på nytt. Gjenta til output ser bra ut.
 5. **Lagre som ny versjon.** Klikk **Lagre ny versjon** → modal åpnes → skriv ditt navn og en change-note (hva og hvorfor), klikk Lagre. Det blir ny `current`.
@@ -29,11 +29,13 @@ Denne guiden er for deg som skal redigere system-promptene til Writer- og Transl
 
 ### Writer
 - **Sonnet 4.6 (default)** — balansert. 1M context betyr at du kan dytte inn alle intervjuer + hele surveyen uten å dele opp. God kvalitet på executive-norsk. Bruk denne som førstevalg.
+- **GPT-5.5** — alternativ modell for sammenlikning eller når redaksjonen ønsker OpenAI-basert output. Krever at `gpt-5.5` er deployet i Foundry.
 - **Opus 4.6** — maks kvalitet. Bruk for flaggskip-artikler, komplekse vinkler, eller når Sonnet gir output som «nesten, men ikke helt». Koster ~5× mer.
 - **Haiku 4.5** — raske utkast, iterering, «hvordan ville dette sett ut»-eksperimenter. Ikke bruk som endelig publisering.
 
 ### Translator
 - **Haiku 4.5 (default)** — utmerket for nordisk-engelsk-oversettelse. Raskt, billig, høy troskap på vel-ressursede språk. Bruk denne som førstevalg.
+- **GPT-5.5** — alternativ modell for kvalitetssjekk eller språk der OpenAI-output foretrekkes. Krever at `gpt-5.5` er deployet i Foundry.
 - **Sonnet 4.6** — når nyanser betyr noe ekstra, eller for finsk (finsk er lavest-ressurset av de fire). Bruk hvis Haiku snubler på idiomer.
 - **Opus 4.6** — sensitive tekster, politisk/juridisk terminologi, eller artikler hvor en feilaktig oversettelse kunne skapt problemer.
 

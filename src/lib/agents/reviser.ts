@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { getFoundryClient } from "@/lib/foundry/client";
+import { streamFoundryMessages } from "@/lib/foundry/messages";
 import { getPromptStore } from "@/lib/prompts/PromptStore";
 import { getArticleStore } from "@/lib/articles/ArticleStore";
 import type {
@@ -7,7 +7,6 @@ import type {
   AgentStreamEvent,
   ReviserInput,
 } from "@/lib/agents/types";
-import { parseThinkingConfig, getThinkingParams } from "@/lib/agents/thinking";
 
 /**
  * Run the reviser and yield streaming events.
@@ -31,8 +30,6 @@ export async function* runReviser(input: ReviserInput): AsyncGenerator<AgentStre
 
   const system = prompt.draft.systemPrompt;
   const userMessage = buildReviserUserMessage(input);
-  const client = getFoundryClient();
-  const thinking = parseThinkingConfig(prompt.draft.model);
 
   yield { type: "start", model: prompt.draft.model, promptVersion: prompt.version };
 
@@ -42,28 +39,25 @@ export async function* runReviser(input: ReviserInput): AsyncGenerator<AgentStre
   let thinkingTokens = 0;
 
   try {
-    const stream = await client.messages.stream({
-      model: thinking.apiModel,
-      ...(thinking.isExtended
-        ? getThinkingParams(thinking, prompt.draft.maxTokens)
-        : { max_tokens: prompt.draft.maxTokens, temperature: prompt.draft.temperature }),
+    const stream = streamFoundryMessages({
+      model: prompt.draft.model,
+      maxTokens: prompt.draft.maxTokens,
+      temperature: prompt.draft.temperature,
       system,
       messages: [{ role: "user", content: userMessage }],
-    } as Parameters<typeof client.messages.stream>[0]);
+    });
 
     for await (const event of stream) {
-      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-        const text = event.delta.text;
+      if (event.type === "delta") {
+        const text = event.text;
         fullText += text;
         yield { type: "delta", text };
+      } else {
+        inputTokens = event.inputTokens;
+        outputTokens = event.outputTokens;
+        thinkingTokens = event.thinkingTokens ?? 0;
       }
     }
-
-    const final = await stream.finalMessage();
-    inputTokens = final.usage.input_tokens;
-    outputTokens = final.usage.output_tokens;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    thinkingTokens = (final.usage as any).thinking_tokens ?? 0;
   } catch (error) {
     yield { type: "error", message: error instanceof Error ? error.message : String(error) };
     return;

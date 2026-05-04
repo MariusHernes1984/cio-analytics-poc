@@ -12,7 +12,7 @@ Step-by-step guide for deploying CIO Analytics in **your own Azure subscription*
 | [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) (`az`) | Login and manage resources |
 | [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) (`azd`) | One-command infra + deploy |
 | Node.js 20+ | Local dev (optional — the build runs on Azure too) |
-| Access to **Azure AI Foundry** (ai.azure.com) | Deploy the Claude models |
+| Access to **Azure AI Foundry** (ai.azure.com) | Deploy the Claude and GPT models |
 
 ---
 
@@ -24,9 +24,10 @@ This is the only manual step. The Bicep template provisions everything else.
 2. Click **Create a project** (or use an existing one)
 3. When choosing a hub, create a new one in **Sweden Central** (or another region that supports Anthropic models)
 4. Once the project is ready, go to **Models + endpoints** → **Deploy model** → **Deploy base model**
-5. Deploy these two models:
-   - `claude-sonnet-4-6` — used by the writer and reviser agents
-   - `claude-haiku-4-5` — used by the translator and reviewer agents
+5. Deploy these models:
+    - `claude-sonnet-4-6` — used by the writer and reviser agents
+    - `claude-haiku-4-5` — used by the translator and reviewer agents
+    - `gpt-5.5` — optional alternative for the writer and translator agents
 6. After deployment, go to the hub's **Overview** → note the **resource name** (e.g. `my-foundry-resource`)
 7. Go to **Keys and Endpoint** → copy **Key 1**
 

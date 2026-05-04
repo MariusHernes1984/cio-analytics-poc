@@ -1,5 +1,5 @@
 /**
- * Token cost estimator for Azure AI Foundry (Anthropic models).
+ * Token cost estimator for Azure AI Foundry models.
  *
  * Prices are pay-as-you-go USD per 1M tokens (standard context, no caching).
  * Exchange rate is hardcoded for PoC simplicity.
@@ -9,6 +9,7 @@ const USD_TO_NOK = 9.5;
 
 /** USD per 1 million tokens: { input, output, thinking } */
 const PRICING: Record<string, { input: number; output: number; thinking: number }> = {
+  "gpt-5.5":                   { input: 3.0, output: 15.0, thinking: 15.0 },
   "claude-opus-4-6":          { input: 5.0, output: 25.0, thinking: 25.0 },
   "claude-opus-4-6-extended": { input: 5.0, output: 25.0, thinking: 25.0 },
   "claude-sonnet-4-6":        { input: 3.0, output: 15.0, thinking: 15.0 },
