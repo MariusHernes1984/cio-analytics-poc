@@ -104,8 +104,11 @@ async function* streamOpenAICompatibleMessages(
   const decoder = new TextDecoder();
   let buffer = "";
 
-  for await (const chunk of response.body) {
-    buffer += decoder.decode(chunk, { stream: true });
+  const reader = response.body.getReader();
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
     const parts = buffer.split("\n\n");
     buffer = parts.pop() ?? "";
 
