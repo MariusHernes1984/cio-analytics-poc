@@ -85,7 +85,7 @@ async function* streamOpenAICompatibleMessages(
         stream: true,
         stream_options: { include_usage: true },
         ...(input.model.toLowerCase().startsWith("gpt-5")
-          ? { max_completion_tokens: input.maxTokens }
+          ? { max_completion_tokens: input.maxTokens, temperature: input.temperature }
           : { max_tokens: input.maxTokens, temperature: input.temperature }),
       }),
     },
