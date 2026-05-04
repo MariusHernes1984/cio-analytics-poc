@@ -30,6 +30,12 @@ function isOpenAICompatibleModel(model: string): boolean {
   return /^(gpt|o\d|chatgpt)/i.test(model);
 }
 
+function usesMaxCompletionTokens(model: string): boolean {
+  // Azure OpenAI GPT-5 chat deployments use the newer OpenAI-compatible
+  // `max_completion_tokens` parameter instead of the legacy `max_tokens`.
+  return model.toLowerCase().startsWith("gpt-5");
+}
+
 async function* streamAnthropicMessages(
   input: FoundryMessageInput,
 ): AsyncGenerator<FoundryMessageStreamEvent> {
@@ -84,7 +90,7 @@ async function* streamOpenAICompatibleMessages(
         ],
         stream: true,
         stream_options: { include_usage: true },
-        ...(input.model.toLowerCase().startsWith("gpt-5")
+        ...(usesMaxCompletionTokens(input.model)
           ? { max_completion_tokens: input.maxTokens, temperature: input.temperature }
           : { max_tokens: input.maxTokens, temperature: input.temperature }),
       }),
