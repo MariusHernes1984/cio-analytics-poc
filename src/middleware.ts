@@ -62,7 +62,12 @@ function redirectToLogin(req: NextRequest): NextResponse {
   const loginUrl = req.nextUrl.clone();
   loginUrl.pathname = "/login";
   loginUrl.search = "";
-  return NextResponse.redirect(loginUrl);
+  const res = NextResponse.redirect(loginUrl);
+  // Clear old poc_auth cookie if present
+  if (req.cookies.get("poc_auth")) {
+    res.cookies.set("poc_auth", "", { path: "/", maxAge: 0 });
+  }
+  return res;
 }
 
 export const config = {
