@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import { Nav } from "@/components/Nav";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { getServerLang } from "@/lib/i18n/getServerLang";
+import { UserProvider } from "@/lib/auth/UserProvider";
+import { requireSession } from "@/lib/auth/requireSession";
+import { AppShell } from "@/components/AppShell";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,15 +13,16 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const lang = await getServerLang();
+  const session = await requireSession();
+  const user = session.ok && session.user ? session.user : null;
 
   return (
     <html lang={lang}>
       <body className="min-h-screen bg-atea-sand font-sans">
         <LanguageProvider initial={lang}>
-          <div className="flex min-h-screen">
-            <Nav />
-            <main className="flex-1 overflow-x-hidden">{children}</main>
-          </div>
+          <UserProvider user={user}>
+            <AppShell>{children}</AppShell>
+          </UserProvider>
         </LanguageProvider>
       </body>
     </html>

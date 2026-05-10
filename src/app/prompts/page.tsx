@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getPromptStore } from "@/lib/prompts/PromptStore";
 import { requireSession } from "@/lib/auth/requireSession";
 import { t } from "@/lib/i18n/translations";
@@ -10,9 +11,8 @@ export const dynamic = "force-dynamic";
 
 export default async function PromptsPage() {
   const session = await requireSession();
-  if (!session.ok) {
-    return <div className="p-10 text-sm text-red-700">Unauthorized.</div>;
-  }
+  if (!session.ok) redirect("/login");
+  if (session.user?.role !== "admin") redirect("/");
 
   const lang = await getServerLang();
 

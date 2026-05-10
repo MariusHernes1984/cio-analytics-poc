@@ -21,8 +21,11 @@ const dict: Record<string, Record<UILang, string>> = {
   "nav.promptsDesc": { en: "Edit agents", no: "Rediger agenter" },
   "nav.sources": { en: "Sources", no: "Kilder" },
   "nav.sourcesDesc": { en: "Approved references", no: "Godkjente referanser" },
+  "nav.users": { en: "Users", no: "Brukere" },
+  "nav.usersDesc": { en: "Manage access", no: "Administrer tilgang" },
   "nav.statistics": { en: "Statistics", no: "Statistikk" },
   "nav.statisticsDesc": { en: "Cost & usage", no: "Kostnad & bruk" },
+  "nav.logout": { en: "Log out", no: "Logg ut" },
   "nav.footer": { en: "Claude in Foundry · Sweden Central", no: "Claude i Foundry · Sweden Central" },
 
   // ── Common ─────────────────────────────────────────────
@@ -254,6 +257,24 @@ const dict: Record<string, Record<UILang, string>> = {
   "stats.thinkingTokens": { en: "Thinking tokens", no: "Thinking-tokens" },
   "stats.cost": { en: "Cost (USD)", no: "Kostnad (NOK)" },
   "stats.disclaimer": { en: "Costs are estimates based on Azure AI Foundry list prices (USD) and a fixed exchange rate of 9.50 NOK/USD. Actual invoiced amounts may differ.", no: "Kostnadene er estimater basert på Azure AI Foundry listepriser (USD) og en fast vekslingskurs på 9,50 NOK/USD. Faktisk fakturert beløp kan avvike." },
+
+  // ── Users ──────────────────────────────────────────────
+  "users.breadcrumb": { en: "USERS", no: "BRUKERE" },
+  "users.title": { en: "User management", no: "Brukeradministrasjon" },
+  "users.description": { en: "Create and manage user accounts. Admins can edit prompts, sources, and manage users. Regular users can write, translate, and view articles.", no: "Opprett og administrer brukerkontoer. Administratorer kan redigere prompts, kilder og administrere brukere. Vanlige brukere kan skrive, oversette og se artikler." },
+  "users.createTitle": { en: "Create new user", no: "Opprett ny bruker" },
+  "users.usernameLabel": { en: "Username", no: "Brukernavn" },
+  "users.usernamePlaceholder": { en: "e.g. ola.nordmann", no: "f.eks. ola.nordmann" },
+  "users.passwordLabel": { en: "Password", no: "Passord" },
+  "users.passwordPlaceholder": { en: "Min. 4 characters", no: "Min. 4 tegn" },
+  "users.roleLabel": { en: "Role", no: "Rolle" },
+  "users.roleAdmin": { en: "Admin", no: "Administrator" },
+  "users.roleUser": { en: "User", no: "Bruker" },
+  "users.createdByLabel": { en: "Created by", no: "Opprettet av" },
+  "users.createdAtLabel": { en: "Created", no: "Opprettet" },
+  "users.createButton": { en: "Create user", no: "Opprett bruker" },
+  "users.listTitle": { en: "Users", no: "Brukere" },
+  "users.empty": { en: "No users found.", no: "Ingen brukere funnet." },
 
   // ── Sources ────────────────────────────────────────────
   "sources.breadcrumb": { en: "SOURCES", no: "KILDER" },

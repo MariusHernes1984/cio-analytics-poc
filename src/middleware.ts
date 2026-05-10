@@ -1,96 +1,70 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { verifySessionToken, COOKIE_NAME } from "@/lib/auth/session";
 
 /**
- * PoC auth gate: query-param login + cookie.
+ * Auth middleware — cookie-based sessions with HMAC verification.
  *
- * - If POC_PASSWORD env var is NOT set → no auth (dev mode).
- * - Otherwise: first visit must include `?pw=<password>`. On match, middleware
- *   sets an HttpOnly/Secure cookie and redirects to the same URL without the
- *   pw param. Subsequent visits just check the cookie.
+ * - If POC_PASSWORD is NOT set → dev mode, no auth.
+ * - Otherwise: check for a valid signed session cookie.
+ * - Unauthenticated users are redirected to /login.
+ * - Login page and auth API routes are public.
  *
- * Why not HTTP Basic Auth: Chrome under some enterprise group policies (Atea's
- * included) suppresses the native Basic Auth prompt entirely, so users see a
- * blank "Unauthorized" page with no way to log in. Query param + cookie
- * sidesteps the browser's auth UI completely.
- *
- * No sessions, no server-side state, no login page: the cookie value is just
- * the password base64-encoded, and every request compares it in constant time.
- * Roll to Entra ID later by replacing this file and
- * src/lib/auth/requireSession.ts.
+ * The cookie is set by /api/auth/login after verifying credentials.
+ * Format: base64(payload).hmac — see src/lib/auth/session.ts.
  */
-const PUBLIC_PATHS = ["/api/health"];
-const COOKIE_NAME = "poc_auth";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+const PUBLIC_PATHS = ["/api/health", "/api/auth", "/login"];
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const password = process.env.POC_PASSWORD;
 
   // Dev/local: no password configured → allow everything
   if (!password) return NextResponse.next();
 
-  // Public endpoints (e.g. health) skip auth
   const path = req.nextUrl.pathname;
+
+  // Public endpoints skip auth
   if (PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + "/"))) {
     return NextResponse.next();
   }
 
-  // First-visit login via ?pw=<password>: set cookie, strip param, redirect
+  // ── Backward compat: redirect old ?pw= logins to /login ──────────
   const pwParam = req.nextUrl.searchParams.get("pw");
   if (pwParam !== null) {
-    if (!constantTimeEqual(pwParam, password)) {
-      return new NextResponse("Ugyldig passord", { status: 401 });
-    }
-    const cleanUrl = req.nextUrl.clone();
-    cleanUrl.searchParams.delete("pw");
-    const res = NextResponse.redirect(cleanUrl);
-    res.cookies.set(COOKIE_NAME, encodeCookie(password), {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: COOKIE_MAX_AGE,
-    });
-    return res;
+    const loginUrl = req.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.searchParams.delete("pw");
+    return NextResponse.redirect(loginUrl);
   }
 
-  // Subsequent visits: check cookie
+  // ── Check session cookie ──────────────────────────────────────────
   const cookie = req.cookies.get(COOKIE_NAME)?.value;
-  if (cookie && constantTimeEqual(decodeCookie(cookie), password)) {
-    return NextResponse.next();
+  if (!cookie) {
+    return redirectToLogin(req);
   }
 
-  // No valid cookie → prompt user to append ?pw=
-  return new NextResponse(
-    "Ikke innlogget. Legg til ?pw=<passord> i URL-en for å logge inn.",
-    { status: 401, headers: { "Content-Type": "text/plain; charset=utf-8" } },
-  );
-}
-
-// btoa/atob are available in the Edge Runtime where middleware runs.
-// They're ASCII-only, which is fine for the password charset we use.
-function encodeCookie(value: string): string {
-  return btoa(value);
-}
-
-function decodeCookie(value: string): string {
-  try {
-    return atob(value);
-  } catch {
-    return "";
+  const payload = await verifySessionToken(cookie);
+  if (!payload) {
+    return redirectToLogin(req);
   }
+
+  // Valid session — pass user info in headers for server components
+  const res = NextResponse.next();
+  res.headers.set("x-user", payload.u);
+  res.headers.set("x-user-role", payload.r);
+  return res;
 }
 
-/** Constant-time string comparison to avoid timing attacks. */
-function constantTimeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) {
-    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+function redirectToLogin(req: NextRequest): NextResponse {
+  // API requests get 401, page requests get redirect
+  if (req.nextUrl.pathname.startsWith("/api/")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  return diff === 0;
+  const loginUrl = req.nextUrl.clone();
+  loginUrl.pathname = "/login";
+  loginUrl.search = "";
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {
-  // Run on everything except Next.js internals and static assets
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };
