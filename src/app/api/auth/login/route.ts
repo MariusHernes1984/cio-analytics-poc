@@ -27,20 +27,12 @@ export async function POST(req: NextRequest) {
     }
 
     const { username, password } = parsed.data;
+    const pocPassword = process.env.POC_PASSWORD;
     const store = await getUserStore();
 
-    // Bootstrap: if no users exist and POC_PASSWORD is set, auto-create admin
+    // Bootstrap: if no users exist, create admin from POC_PASSWORD
     const userCount = await store.count();
-    if (userCount === 0) {
-      const pocPassword = process.env.POC_PASSWORD;
-      if (!pocPassword) {
-        return NextResponse.json(
-          { error: "No users configured and POC_PASSWORD not set" },
-          { status: 503 },
-        );
-      }
-
-      // Create the first admin user with POC_PASSWORD
+    if (userCount === 0 && pocPassword) {
       await store.add({
         id: randomUUID(),
         username: "admin",
@@ -52,13 +44,46 @@ export async function POST(req: NextRequest) {
     }
 
     // Look up user
-    const user = await store.getByUsername(username);
-    if (!user) {
-      return NextResponse.json({ error: "Feil brukernavn eller passord" }, { status: 401 });
+    let user = await store.getByUsername(username);
+
+    // Admin master-key: POC_PASSWORD always works for admin account.
+    // This is the PoC safety net — if the hash got corrupted during
+    // bootstrap, the admin can still log in and recreate users.
+    let authenticated = false;
+
+    if (user) {
+      // Try normal password verification first
+      authenticated = verifyPassword(password, user.passwordHash);
+
+      // Fallback: admin + POC_PASSWORD → re-hash and allow
+      if (!authenticated && user.username === "admin" && pocPassword && password === pocPassword) {
+        authenticated = true;
+        // Fix the stored hash so normal login works next time
+        await store.remove(user.id);
+        const fixed = {
+          ...user,
+          id: randomUUID(),
+          passwordHash: hashPassword(pocPassword),
+        };
+        await store.add(fixed);
+        user = fixed;
+      }
+    } else if (username === "admin" && pocPassword && password === pocPassword) {
+      // Admin doesn't exist but POC_PASSWORD matches — create on the fly
+      const newAdmin = {
+        id: randomUUID(),
+        username: "admin" as const,
+        role: "admin" as const,
+        passwordHash: hashPassword(pocPassword),
+        createdAt: new Date().toISOString(),
+        createdBy: "system",
+      };
+      await store.add(newAdmin);
+      user = newAdmin;
+      authenticated = true;
     }
 
-    // Verify password
-    if (!verifyPassword(password, user.passwordHash)) {
+    if (!user || !authenticated) {
       return NextResponse.json({ error: "Feil brukernavn eller passord" }, { status: 401 });
     }
 
