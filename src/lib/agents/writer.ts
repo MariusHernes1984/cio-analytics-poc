@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { getFoundryClient } from "@/lib/foundry/client";
 import { getPromptStore } from "@/lib/prompts/PromptStore";
+import type { PromptVersion } from "@/lib/prompts/PromptStore";
 import { getArticleStore, extractTitle, type StoredArticle } from "@/lib/articles/ArticleStore";
 import type {
   AgentRunResult,
@@ -60,28 +61,22 @@ export async function* runWriter(input: WriterInput): AsyncGenerator<AgentStream
     const final = await stream.finalMessage();
     inputTokens = final.usage.input_tokens;
     outputTokens = final.usage.output_tokens;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    thinkingTokens = (final.usage as any).thinking_tokens ?? 0;
+    thinkingTokens = thinkingTokensFromUsage(final.usage);
   } catch (error) {
     yield { type: "error", message: error instanceof Error ? error.message : String(error) };
     return;
   }
 
-  const warnings = extractWarnings(fullText);
   const articleId = randomUUID();
-  const result: AgentRunResult = {
+  const result = buildWriterResult({
     articleId,
-    agent: "writer",
-    promptVersion: prompt.version,
-    model: prompt.draft.model,
+    prompt,
+    markdown: fullText,
     inputTokens,
     outputTokens,
-    ...(thinkingTokens > 0 ? { thinkingTokens } : {}),
-    durationMs: Date.now() - start,
-    markdown: fullText,
-    warnings,
-    createdAt: new Date().toISOString(),
-  };
+    thinkingTokens,
+    start,
+  });
 
   // Persist to ArticleStore
   const articles = await getArticleStore();
@@ -96,6 +91,45 @@ export async function* runWriter(input: WriterInput): AsyncGenerator<AgentStream
   await articles.save(stored);
 
   yield { type: "done", result };
+}
+
+export async function generateWriterDraft(input: WriterInput): Promise<AgentRunResult> {
+  const start = Date.now();
+  const store = await getPromptStore();
+  const prompt = input.promptVersion
+    ? await store.getVersion("writer", input.promptVersion)
+    : await store.getCurrent("writer");
+
+  const userMessage = buildWriterUserMessage(input);
+  const client = getFoundryClient();
+  const thinking = parseThinkingConfig(prompt.draft.model);
+  const stream = await client.messages.stream({
+    model: thinking.apiModel,
+    ...(thinking.isExtended
+      ? getThinkingParams(thinking, prompt.draft.maxTokens)
+      : { max_tokens: prompt.draft.maxTokens, temperature: prompt.draft.temperature }),
+    system: prompt.draft.systemPrompt,
+    messages: [{ role: "user", content: userMessage }],
+  } as Parameters<typeof client.messages.stream>[0]);
+
+  let fullText = "";
+  for await (const event of stream) {
+    if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+      fullText += event.delta.text;
+    }
+  }
+
+  const final = await stream.finalMessage();
+
+  return buildWriterResult({
+    articleId: randomUUID(),
+    prompt,
+    markdown: fullText,
+    inputTokens: final.usage.input_tokens,
+    outputTokens: final.usage.output_tokens,
+    thinkingTokens: thinkingTokensFromUsage(final.usage),
+    start,
+  });
 }
 
 /**
@@ -134,6 +168,50 @@ function formatMaterial(m: ResearchMaterial): string {
 
 function escapeAttr(s: string): string {
   return s.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function buildWriterResult({
+  articleId,
+  prompt,
+  markdown,
+  inputTokens,
+  outputTokens,
+  thinkingTokens,
+  start,
+}: {
+  articleId: string;
+  prompt: PromptVersion;
+  markdown: string;
+  inputTokens: number;
+  outputTokens: number;
+  thinkingTokens: number;
+  start: number;
+}): AgentRunResult {
+  return {
+    articleId,
+    agent: "writer",
+    promptVersion: prompt.version,
+    model: prompt.draft.model,
+    inputTokens,
+    outputTokens,
+    ...(thinkingTokens > 0 ? { thinkingTokens } : {}),
+    durationMs: Date.now() - start,
+    markdown,
+    warnings: extractWarnings(markdown),
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function thinkingTokensFromUsage(usage: unknown): number {
+  if (
+    typeof usage === "object" &&
+    usage !== null &&
+    "thinking_tokens" in usage &&
+    typeof usage.thinking_tokens === "number"
+  ) {
+    return usage.thinking_tokens;
+  }
+  return 0;
 }
 
 /** Scan output for [KILDE MANGLER] markers. */

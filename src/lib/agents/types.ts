@@ -95,6 +95,7 @@ export interface ArticleReview {
   summary: string;
   suggestions: string[];
   model: string;
+  promptVersion?: string;
   inputTokens: number;
   outputTokens: number;
   thinkingTokens?: number;

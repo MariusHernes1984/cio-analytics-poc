@@ -28,7 +28,7 @@ export async function POST(
   { params }: { params: Promise<{ agent: string }> },
 ) {
   const session = await requireSession();
-  if (!session.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.ok || session.user?.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // We accept the agent param for symmetry but don't use it here — a test
   // run is agent-agnostic (just raw system+user+model).

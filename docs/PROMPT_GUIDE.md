@@ -91,6 +91,18 @@ Legg til:
 2. **Test utkast-sammenlikning**. Kjør samme test-input mot både gammel og ny prompt i to nettleser-faner.
 3. **Spør en kollega**. Prompt-redigering er et håndverk — det hjelper å ha noen å lese over skulderen.
 
+## Repeterbar evaluering
+
+Bruk **`/evaluations`** når du vil teste om en prompt-endring faktisk gir bedre kvalitet over tid.
+
+1. Opprett en evalueringscase med tema, brief, eventuelt researchmateriale, kvalitetskriterier og forventede redaksjonelle notater.
+2. Velg writer-prompt-versjon og klikk **Kjør eval**. Dette genererer en artikkel uten å lagre den som vanlig artikkel.
+3. Systemet kjører automatisk kvalitetsvurdering og lagrer score, modell, prompt-versjon, tokenbruk, kostnad og output.
+4. Les artikkelen og sett redaksjonell dom: **Godkjent**, **Trenger arbeid** eller **Avvist**.
+5. Sammenlign resultater på `/statistics` for å se kvalitet per modell og prompt-versjon.
+
+Evalueringscaser bør være korte, representative og stabile. Ikke endre casen hver gang prompten endres — da mister du sammenligningsgrunnlaget.
+
 ## Hva du **ikke** kan styre fra editor-en
 
 - **Variabel-navn** på eksisterende placeholders (`{{topic}}`, osv.)

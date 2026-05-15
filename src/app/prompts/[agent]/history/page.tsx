@@ -18,7 +18,7 @@ export default async function PromptHistoryPage({
   params: Promise<{ agent: string }>;
 }) {
   const session = await requireSession();
-  if (!session.ok) {
+  if (!session.ok || session.user?.role !== "admin") {
     return <div className="p-10 text-sm text-red-700">Unauthorized.</div>;
   }
 

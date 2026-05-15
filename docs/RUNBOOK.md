@@ -6,9 +6,9 @@ Operational reference for the deployed PoC. Kept short — most things work and 
 
 All resources live in a single resource group in **Sweden Central**:
 
-- `app-cioa-<env>-<hash>` — App Service (B1 Linux, Node 20), runs the Next.js app
+- `app-cioa-<env>-<hash>` — App Service (P0v3 Linux, Node 20), runs the Next.js app
 - `plan-cioa-<env>` — App Service plan
-- `cioa<hash>` — Storage account (LRS, blob versioning, 30d soft-delete)
+- `cioa<hash>` — Storage account (LRS, blob versioning, 30d soft-delete) with `prompts`, `articles`, `sources`, `users`, and `evaluations` containers
 - `appi-cioa-<env>` — Application Insights
 - `log-cioa-<env>` — Log Analytics workspace
 - **Foundry resource** — provisioned separately (by design — different lifecycle)
@@ -16,7 +16,7 @@ All resources live in a single resource group in **Sweden Central**:
 ## Health check
 
 ```bash
-curl -u admin:<POC_PASSWORD> https://<your-app>.azurewebsites.net/api/health
+curl https://<your-app>.azurewebsites.net/api/health
 ```
 
 Expected: `{"status":"ok","foundry":"reachable"}`. If `foundry` is not reachable, the app is still up but generations will fail — check Foundry resource, its API key, and the `FOUNDRY_RESOURCE` app setting.
@@ -79,6 +79,10 @@ prompts/writer/v0002.json
 prompts/translator/v0001.json
 prompts/translator/current.txt
 articles/<uuid>.json
+sources/sources.json
+users/users.json
+evaluations/cases.json
+evaluations/runs.json
 ```
 
 ### Restore a deleted article

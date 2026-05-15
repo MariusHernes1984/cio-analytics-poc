@@ -1,6 +1,6 @@
 # Auth migration: shared password → Entra ID
 
-The PoC uses a single shared HTTP Basic Auth password to gatekeep the deployed app. This document describes exactly what needs to change to migrate to Entra ID with role-based access. The architecture was designed so this is a **single-file-at-a-time** swap with no rewrites elsewhere in the code.
+The PoC uses local users plus a signed session cookie. `POC_PASSWORD` bootstraps the initial admin user and signs sessions. This document describes what needs to change to migrate to Entra ID with role-based access. The architecture was designed so this is a **single-file-at-a-time** swap with no rewrites elsewhere in the code.
 
 **Who needs to do this:** Someone with **Entra ID admin access** (for app registration) and **Owner** or **User Access Administrator** on the Azure subscription (for role assignments). The PoC developer intentionally doesn't need any of this.
 
@@ -9,16 +9,16 @@ The PoC uses a single shared HTTP Basic Auth password to gatekeep the deployed a
 ## What's in place today
 
 ```
-Browser → middleware.ts → (Basic Auth check against POC_PASSWORD) → route handlers
+Browser → middleware.ts → signed cio_session cookie → route handlers
                               │
-                              └─ requireSession() returns {ok:true} (stub)
+                              └─ requireSession() resolves username + role
 ```
 
-- **`src/middleware.ts`** — ~60 lines. Checks `Authorization: Basic <base64>` header against `POC_PASSWORD` env var. If missing/wrong, returns 401 with `WWW-Authenticate: Basic`.
-- **`src/lib/auth/requireSession.ts`** — returns `{ok: true}` unconditionally. Every server component and route handler calls this as its session-check seam.
-- **`POC_PASSWORD`** — single env var in App Service Configuration. Rotating = edit + Save in the portal, no redeploy.
+- **`src/middleware.ts`** — verifies the signed `cio_session` cookie and redirects unauthenticated page requests to `/login`.
+- **`src/lib/auth/requireSession.ts`** — resolves `{ok, user}` from middleware headers or by re-verifying the cookie.
+- **`POC_PASSWORD`** — bootstrap/admin fallback and session signing secret for the PoC.
 
-Both the UI pages and the API routes call `requireSession()` to decide "is this request allowed to proceed". Today it's always yes; tomorrow it's "if the user's Entra ID token is valid and has the right group".
+Both the UI pages and the API routes call `requireSession()` to decide "is this request allowed to proceed". Today this checks the PoC session cookie and local role; tomorrow it should check whether the user's Entra ID token is valid and has the right group.
 
 ---
 

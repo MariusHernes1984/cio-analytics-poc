@@ -26,6 +26,9 @@ coverage/
 # local prompt/article storage for dev
 .local-prompts/
 .local-articles/
+.local-sources/
+.local-users/
+.local-evaluations/
 .azurite/
 
 # typescript

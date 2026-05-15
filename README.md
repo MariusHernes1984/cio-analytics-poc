@@ -44,9 +44,10 @@ See `.env.example` for the full list. Required at runtime:
 | `STORAGE_MODE` | `local` (dev) or `azure` (prod) | Defaults to `local` |
 | `AZURE_STORAGE_ACCOUNT` | Storage account name, when `STORAGE_MODE=azure` | Conditionally |
 | `AZURE_STORAGE_CONNECTION_STRING` | Alternative to account+MI | Conditionally |
-| `POC_PASSWORD` | HTTP Basic Auth password for deployed envs | Only in Azure |
+| `POC_PASSWORD` | PoC bootstrap/admin password and session signing secret | Only in Azure |
 | `WRITER_MODEL` | Default model for writer agent | `claude-sonnet-4-6` |
 | `TRANSLATOR_MODEL` | Default model for translator agent | `claude-haiku-4-5` |
+| `REVIEWER_MODEL` | Default model for quality reviewer/evaluation scoring | `claude-opus-4-6` |
 
 ---
 
@@ -62,11 +63,13 @@ src/
       revise/route.ts           # POST — SSE revision streaming
       translate/route.ts        # POST — SSE translator streaming
       articles/                 # GET list + single
+      evaluations/              # eval cases, runs, and verdicts
       prompts/[agent]/          # GET/PUT/POST prompts + /test dry-run
       export/docx|md/route.ts   # POST — markdown → file download
     page.tsx                    # Dashboard
     write/, translate/,
-    articles/, prompts/         # UI pages
+    articles/, prompts/,
+    evaluations/                # UI pages
     layout.tsx, globals.css
   components/                   # Client components (Nav, Editor, Viewer, Forms,
                                 #   ReviewPanel, ArticleReviser)
@@ -78,7 +81,7 @@ src/
     agents/
       types.ts                  # shared types, stream events, review types
       writer.ts                 # writer runner (sonnet)
-      reviewer.ts               # quality reviewer (haiku, hardcoded prompt)
+      reviewer.ts               # quality reviewer (configurable model)
       translator.ts             # translator runner (haiku)
     prompts/
       PromptStore.ts            # SEAM: interface + factory
@@ -86,6 +89,7 @@ src/
       LocalPromptStore.ts       # dev impl
       defaults.ts               # initial Norwegian system prompts (v0001)
     articles/                   # same pattern as prompts/
+    evaluations/                # repeatable editorial eval cases + runs
     export/
       markdown.ts, docx.ts      # file-export helpers
     auth/
@@ -96,7 +100,7 @@ src/
       getServerLang.ts           # server-side cookie reader
     streaming.ts                # generic SSE helpers (server)
     sseClient.ts                # SSE helpers (browser)
-  middleware.ts                 # HTTP Basic Auth (PoC gatekeeper)
+  middleware.ts                 # cookie-session auth (PoC gatekeeper)
 infra/
   main.bicep                    # Azure infra as code
   main.parameters.json          # azd parameter file
@@ -160,15 +164,15 @@ with zipfile.ZipFile('deploy.zip','w',zipfile.ZIP_DEFLATED) as zf:
 az webapp deploy --name <app-name> --resource-group <rg> --src-path deploy.zip --type zip
 ```
 
-After deploy, the web URL is printed. Visit it — browser shows a native Basic Auth prompt. Username can be anything (e.g. `admin`); password is what you set as `POC_PASSWORD`.
+After deploy, the web URL is printed. Visit it and sign in on `/login`. The initial admin user is bootstrapped from `POC_PASSWORD`.
 
 ---
 
 ## PoC constraints (out of scope)
 
 - **No CMS integration** — export is file-only (`.md` / `.docx`)
-- **No Entra ID** — single shared password via HTTP Basic Auth
-- **No RBAC** — all authenticated users have full access
+- **No Entra ID** — local PoC users and signed cookies
+- **Limited RBAC** — admin/user roles, not Entra groups
 - **No RAG** — no vector search over the article archive
 - **No multi-turn agents** — each call is a single `messages.create`
 - **No A/B testing in production traffic** — only in the prompt-editor test pane

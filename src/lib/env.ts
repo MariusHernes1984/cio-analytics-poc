@@ -14,6 +14,7 @@ const EnvSchema = z.object({
   FOUNDRY_API_KEY: z.string().min(1, "FOUNDRY_API_KEY is required"),
   WRITER_MODEL: z.string().default("claude-sonnet-4-6"),
   TRANSLATOR_MODEL: z.string().default("claude-haiku-4-5"),
+  REVIEWER_MODEL: z.string().default("claude-opus-4-6"),
 
   // Storage
   STORAGE_MODE: z.enum(["local", "azure"]).default("local"),
@@ -22,6 +23,8 @@ const EnvSchema = z.object({
   AZURE_STORAGE_CONTAINER_PROMPTS: z.string().default("prompts"),
   AZURE_STORAGE_CONTAINER_ARTICLES: z.string().default("articles"),
   AZURE_STORAGE_CONTAINER_SOURCES: z.string().default("sources"),
+  AZURE_STORAGE_CONTAINER_USERS: z.string().default("users"),
+  AZURE_STORAGE_CONTAINER_EVALUATIONS: z.string().default("evaluations"),
 
   // Auth (PoC) — empty means "no auth" (dev only)
   POC_PASSWORD: z.string().optional(),
