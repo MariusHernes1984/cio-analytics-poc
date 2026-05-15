@@ -1,12 +1,13 @@
 import { getFoundryClient } from "@/lib/foundry/client";
 import { getArticleStore } from "@/lib/articles/ArticleStore";
+import { getEnv } from "@/lib/env";
 import type {
   ArticleReview,
   ReviewerInput,
   ReviewStreamEvent,
 } from "@/lib/agents/types";
 
-const MODEL = "claude-opus-4-6";
+export const REVIEWER_PROMPT_VERSION = "reviewer-v0001";
 const MAX_TOKENS = 3000;
 const TEMPERATURE = 0.2;
 
@@ -87,8 +88,9 @@ export async function* runReviewer(
 ): AsyncGenerator<ReviewStreamEvent> {
   const start = Date.now();
   const client = getFoundryClient();
+  const model = getReviewerModel();
 
-  yield { type: "start", model: MODEL };
+  yield { type: "start", model };
 
   let fullText = "";
   let inputTokens = 0;
@@ -96,7 +98,7 @@ export async function* runReviewer(
 
   try {
     const stream = await client.messages.stream({
-      model: MODEL,
+      model,
       max_tokens: MAX_TOKENS,
       temperature: TEMPERATURE,
       system: SYSTEM_PROMPT,
@@ -119,33 +121,49 @@ export async function* runReviewer(
     return;
   }
 
-  // Parse the JSON output — strip markdown fences if Claude wraps them
-  let parsed: { dimensions: ArticleReview["dimensions"]; overallScore: number; summary: string; suggestions: string[] };
-  try {
-    const cleaned = fullText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
-    parsed = JSON.parse(cleaned);
-  } catch {
+  const parsed = parseReviewerOutput(fullText);
+  if (!parsed) {
     yield { type: "error", message: "Failed to parse reviewer JSON output" };
     return;
   }
 
-  const review: ArticleReview = {
-    dimensions: parsed.dimensions,
-    overallScore: parsed.overallScore,
-    summary: parsed.summary,
-    suggestions: parsed.suggestions,
-    model: MODEL,
+  const review = buildReview({
+    parsed,
+    model,
     inputTokens,
     outputTokens,
-    durationMs: Date.now() - start,
-    createdAt: new Date().toISOString(),
-  };
+    start,
+  });
 
   // Persist review on the article
   const articles = await getArticleStore();
   await articles.attachReview(input.articleId, review);
 
   yield { type: "done", result: { review } };
+}
+
+export async function reviewArticleQuality(input: ReviewerInput): Promise<ArticleReview> {
+  const start = Date.now();
+  const client = getFoundryClient();
+  const model = getReviewerModel();
+  const response = await client.messages.create({
+    model,
+    max_tokens: MAX_TOKENS,
+    temperature: TEMPERATURE,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: "user", content: buildUserMessage(input) }],
+  });
+  const parsed = parseReviewerOutput(messageText(response));
+  if (!parsed) {
+    throw new Error("Failed to parse reviewer JSON output");
+  }
+  return buildReview({
+    parsed,
+    model,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
+    start,
+  });
 }
 
 function buildUserMessage(input: ReviewerInput): string {
@@ -160,4 +178,50 @@ function buildUserMessage(input: ReviewerInput): string {
     "",
     "Vurder artikkelen nå. Output kun JSON.",
   ].join("\n");
+}
+
+function getReviewerModel(): string {
+  return getEnv().REVIEWER_MODEL;
+}
+
+function parseReviewerOutput(
+  text: string,
+): Pick<ArticleReview, "dimensions" | "overallScore" | "summary" | "suggestions"> | null {
+  try {
+    const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+    return JSON.parse(cleaned) as Pick<ArticleReview, "dimensions" | "overallScore" | "summary" | "suggestions">;
+  } catch {
+    return null;
+  }
+}
+
+function buildReview({
+  parsed,
+  model,
+  inputTokens,
+  outputTokens,
+  start,
+}: {
+  parsed: Pick<ArticleReview, "dimensions" | "overallScore" | "summary" | "suggestions">;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  start: number;
+}): ArticleReview {
+  return {
+    dimensions: parsed.dimensions,
+    overallScore: parsed.overallScore,
+    summary: parsed.summary,
+    suggestions: parsed.suggestions,
+    model,
+    promptVersion: REVIEWER_PROMPT_VERSION,
+    inputTokens,
+    outputTokens,
+    durationMs: Date.now() - start,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function messageText(message: { content: Array<{ type: string; text?: string }> }): string {
+  return message.content.map((block) => (block.type === "text" ? block.text ?? "" : "")).join("");
 }

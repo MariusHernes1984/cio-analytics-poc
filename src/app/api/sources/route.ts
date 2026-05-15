@@ -19,7 +19,7 @@ const DeleteSourceSchema = z.object({
 /** GET — list all approved reference sources */
 export async function GET() {
   const session = await requireSession();
-  if (!session.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.ok || session.user?.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const store = await getSourceStore();
   const sources = await store.list();
@@ -29,7 +29,7 @@ export async function GET() {
 /** POST — add a new reference source */
 export async function POST(req: NextRequest) {
   const session = await requireSession();
-  if (!session.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.ok || session.user?.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let body: unknown;
   try {
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 /** DELETE — remove a reference source by id */
 export async function DELETE(req: NextRequest) {
   const session = await requireSession();
-  if (!session.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.ok || session.user?.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let body: unknown;
   try {

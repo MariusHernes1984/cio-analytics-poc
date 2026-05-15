@@ -3,6 +3,7 @@
 // Provisions the absolute minimum for the PoC:
 //  - Resource group (created via azd outside this file)
 //  - Storage account (LRS, blob versioning, soft-delete)
+//  - Blob containers for prompts, articles, sources, users, and evaluations
 //  - App Service plan (B1 Linux)
 //  - App Service (Node 20) with system-assigned managed identity
 //  - RBAC: Storage Blob Data Contributor for the app's managed identity
@@ -97,6 +98,30 @@ resource articlesContainer 'Microsoft.Storage/storageAccounts/blobServices/conta
   }
 }
 
+resource sourcesContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobServices
+  name: 'sources'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
+resource usersContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobServices
+  name: 'users'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
+resource evaluationsContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobServices
+  name: 'evaluations'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
 // --- Observability ---
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: logAnalyticsName
@@ -171,11 +196,15 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         { name: 'FOUNDRY_API_KEY', value: foundryApiKey }
         { name: 'WRITER_MODEL', value: 'claude-sonnet-4-6' }
         { name: 'TRANSLATOR_MODEL', value: 'claude-haiku-4-5' }
+        { name: 'REVIEWER_MODEL', value: 'claude-opus-4-6' }
         // --- Storage ---
         { name: 'STORAGE_MODE', value: 'azure' }
         { name: 'AZURE_STORAGE_ACCOUNT', value: storage.name }
         { name: 'AZURE_STORAGE_CONTAINER_PROMPTS', value: 'prompts' }
         { name: 'AZURE_STORAGE_CONTAINER_ARTICLES', value: 'articles' }
+        { name: 'AZURE_STORAGE_CONTAINER_SOURCES', value: 'sources' }
+        { name: 'AZURE_STORAGE_CONTAINER_USERS', value: 'users' }
+        { name: 'AZURE_STORAGE_CONTAINER_EVALUATIONS', value: 'evaluations' }
         // --- Auth (PoC shared password) ---
         { name: 'POC_PASSWORD', value: pocPassword }
         // --- Logging ---

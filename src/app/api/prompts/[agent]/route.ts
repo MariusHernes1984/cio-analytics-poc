@@ -29,7 +29,7 @@ export async function GET(
   { params }: { params: Promise<{ agent: string }> },
 ) {
   const session = await requireSession();
-  if (!session.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.ok || session.user?.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { agent: agentRaw } = await params;
   const agentResult = AgentParam.safeParse(agentRaw);
@@ -52,7 +52,7 @@ export async function PUT(
   { params }: { params: Promise<{ agent: string }> },
 ) {
   const session = await requireSession();
-  if (!session.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.ok || session.user?.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { agent: agentRaw } = await params;
   const agentResult = AgentParam.safeParse(agentRaw);
@@ -95,7 +95,7 @@ export async function POST(
   { params }: { params: Promise<{ agent: string }> },
 ) {
   const session = await requireSession();
-  if (!session.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.ok || session.user?.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { agent: agentRaw } = await params;
   const agentResult = AgentParam.safeParse(agentRaw);

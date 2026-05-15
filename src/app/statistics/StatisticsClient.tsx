@@ -49,6 +49,16 @@ interface Stats {
   byOperation: OpRow[];
   qualityByModel: QualityGroup[];
   qualityByPromptVersion: QualityGroup[];
+  evaluations: {
+    totalCases: number;
+    totalRuns: number;
+    acceptedRuns: number;
+    acceptanceRate: number;
+    avgOverall: number;
+    totalCostNOK: number;
+    qualityByModel: QualityGroup[];
+    qualityByPromptVersion: QualityGroup[];
+  };
 }
 
 function formatKr(n: number, lang: "en" | "no"): string {
@@ -198,6 +208,36 @@ export function StatisticsClient() {
         groupLabel={t("eval.promptGroup")}
         groups={stats.qualityByPromptVersion}
         noDataText={t("eval.noReviews")}
+        lang={lang}
+      />
+
+      <div className="rounded-lg border border-black/10 bg-white p-6">
+        <div className="mb-4 text-sm font-semibold text-atea-navy">{t("stats.evaluations")}</div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <Card label={t("stats.evalCases")} value={String(stats.evaluations.totalCases)} />
+          <Card label={t("stats.evalRuns")} value={String(stats.evaluations.totalRuns)} />
+          <Card label={t("stats.evalApproved")} value={String(stats.evaluations.acceptedRuns)} />
+          <Card label={t("stats.evalAvgScore")} value={stats.evaluations.avgOverall.toFixed(1)} />
+          <Card label={t("stats.evalCost")} value={formatKr(stats.evaluations.totalCostNOK, lang)} />
+        </div>
+        <div className="mt-3 text-xs text-black/40">
+          {t("stats.evalAcceptanceRate")}: {stats.evaluations.acceptanceRate}%
+        </div>
+      </div>
+
+      <QualitySection
+        title={t("stats.evalQualityByModel")}
+        groupLabel={t("eval.group")}
+        groups={stats.evaluations.qualityByModel}
+        noDataText={t("stats.noEvalRuns")}
+        lang={lang}
+      />
+
+      <QualitySection
+        title={t("stats.evalQualityByPrompt")}
+        groupLabel={t("eval.promptGroup")}
+        groups={stats.evaluations.qualityByPromptVersion}
+        noDataText={t("stats.noEvalRuns")}
         lang={lang}
       />
 

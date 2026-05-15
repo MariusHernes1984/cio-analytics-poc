@@ -1,6 +1,7 @@
-import { BlobServiceClient, type ContainerClient } from "@azure/storage-blob";
+import type { ContainerClient } from "@azure/storage-blob";
 import { getEnv } from "@/lib/env";
 import type { ReferenceSource, SourceStore } from "./SourceStore";
+import { getBlobServiceClient, isBlobNotFound } from "@/lib/storage/blobClient";
 
 const BLOB_NAME = "sources.json";
 
@@ -12,11 +13,7 @@ export class BlobSourceStore implements SourceStore {
 
   constructor() {
     const env = getEnv();
-    if (!env.AZURE_STORAGE_CONNECTION_STRING) {
-      throw new Error("BlobSourceStore requires AZURE_STORAGE_CONNECTION_STRING");
-    }
-    const service = BlobServiceClient.fromConnectionString(env.AZURE_STORAGE_CONNECTION_STRING);
-    this.container = service.getContainerClient(env.AZURE_STORAGE_CONTAINER_SOURCES);
+    this.container = getBlobServiceClient().getContainerClient(env.AZURE_STORAGE_CONTAINER_SOURCES);
   }
 
   async list(): Promise<ReferenceSource[]> {
@@ -25,7 +22,8 @@ export class BlobSourceStore implements SourceStore {
       const res = await blob.download(0);
       const body = await streamToString(res.readableStreamBody!);
       return JSON.parse(body) as ReferenceSource[];
-    } catch {
+    } catch (error) {
+      if (!isBlobNotFound(error)) throw error;
       return [];
     }
   }

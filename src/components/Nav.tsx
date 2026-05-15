@@ -20,6 +20,7 @@ export function Nav() {
     { href: "/write", label: t("nav.write"), description: t("nav.writeDesc") },
     { href: "/translate", label: t("nav.translate"), description: t("nav.translateDesc") },
     { href: "/articles", label: t("nav.articles"), description: t("nav.articlesDesc") },
+    { href: "/evaluations", label: t("nav.evaluations"), description: t("nav.evaluationsDesc"), adminOnly: true },
     { href: "/prompts", label: t("nav.prompts"), description: t("nav.promptsDesc"), adminOnly: true },
     { href: "/sources", label: t("nav.sources"), description: t("nav.sourcesDesc"), adminOnly: true },
     { href: "/users", label: t("nav.users"), description: t("nav.usersDesc"), adminOnly: true },

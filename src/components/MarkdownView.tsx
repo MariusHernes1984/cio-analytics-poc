@@ -49,9 +49,16 @@ function renderInline(text: string): string {
   // links [text](url)
   out = out.replace(
     /\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2" target="_blank" rel="noreferrer">$1</a>',
+    (_match, label: string, url: string) =>
+      `<a href="${safeHref(url)}" target="_blank" rel="noreferrer">${label}</a>`,
   );
   return out;
+}
+
+function safeHref(url: string): string {
+  const trimmed = url.trim();
+  if (/^(https?:|mailto:|#)/i.test(trimmed)) return trimmed;
+  return "#";
 }
 
 function renderMarkdown(md: string): string {

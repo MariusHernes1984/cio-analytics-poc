@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth/requireSession";
 import { getArticleStore } from "@/lib/articles/ArticleStore";
+import { getEvaluationStore } from "@/lib/evaluations/EvaluationStore";
 import type { StoredArticle } from "@/lib/articles/ArticleStore";
 import type { ArticleReview } from "@/lib/agents/types";
 import { estimateCostNOK } from "@/lib/cost";
@@ -183,6 +184,38 @@ export async function GET() {
     .map(([group, acc]) => finalizeAccumulator(group, acc))
     .sort((a, b) => b.avgOverall - a.avgOverall);
 
+  const evaluationStore = await getEvaluationStore();
+  const evalCases = await evaluationStore.listCases();
+  const evalRuns = await evaluationStore.listRuns();
+  const evalByModel = new Map<string, QualityAccumulator>();
+  const evalByPrompt = new Map<string, QualityAccumulator>();
+  let evalAcceptedRuns = 0;
+  let evalTotalCostNOK = 0;
+  const evalOverall = newAccumulator();
+
+  for (const run of evalRuns) {
+    addReview(evalOverall, run.review);
+    if (!evalByModel.has(run.writerModel)) evalByModel.set(run.writerModel, newAccumulator());
+    addReview(evalByModel.get(run.writerModel)!, run.review);
+    if (!evalByPrompt.has(run.writerPromptVersion)) {
+      evalByPrompt.set(run.writerPromptVersion, newAccumulator());
+    }
+    addReview(evalByPrompt.get(run.writerPromptVersion)!, run.review);
+    if (run.humanVerdict?.status === "approved") evalAcceptedRuns++;
+    evalTotalCostNOK += estimateCostNOK(
+      run.writerModel,
+      run.writerResult.inputTokens,
+      run.writerResult.outputTokens,
+      run.writerResult.thinkingTokens ?? 0,
+    );
+    evalTotalCostNOK += estimateCostNOK(
+      run.review.model,
+      run.review.inputTokens,
+      run.review.outputTokens,
+      run.review.thinkingTokens ?? 0,
+    );
+  }
+
   return NextResponse.json({
     totalArticles,
     totalTranslations,
@@ -196,5 +229,19 @@ export async function GET() {
     byOperation: [...byOp.values()].sort((a, b) => b.costNOK - a.costNOK),
     qualityByModel,
     qualityByPromptVersion,
+    evaluations: {
+      totalCases: evalCases.length,
+      totalRuns: evalRuns.length,
+      acceptedRuns: evalAcceptedRuns,
+      acceptanceRate: evalRuns.length > 0 ? Math.round((evalAcceptedRuns / evalRuns.length) * 100) : 0,
+      avgOverall: evalOverall.count > 0 ? Math.round((evalOverall.totalScore / evalOverall.count) * 10) / 10 : 0,
+      totalCostNOK: evalTotalCostNOK,
+      qualityByModel: [...evalByModel.entries()]
+        .map(([group, acc]) => finalizeAccumulator(group, acc))
+        .sort((a, b) => b.avgOverall - a.avgOverall),
+      qualityByPromptVersion: [...evalByPrompt.entries()]
+        .map(([group, acc]) => finalizeAccumulator(group, acc))
+        .sort((a, b) => b.avgOverall - a.avgOverall),
+    },
   });
 }

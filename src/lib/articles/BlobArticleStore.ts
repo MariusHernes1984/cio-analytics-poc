@@ -1,6 +1,7 @@
-import { BlobServiceClient, type ContainerClient } from "@azure/storage-blob";
+import type { ContainerClient } from "@azure/storage-blob";
 import { getEnv } from "@/lib/env";
 import type { AgentRunResult, ArticleReview, TargetLanguage } from "@/lib/agents/types";
+import { getBlobServiceClient, isBlobNotFound } from "@/lib/storage/blobClient";
 import {
   extractTitle,
   type ArticleListItem,
@@ -13,11 +14,7 @@ export class BlobArticleStore implements ArticleStore {
 
   constructor() {
     const env = getEnv();
-    if (!env.AZURE_STORAGE_CONNECTION_STRING) {
-      throw new Error("BlobArticleStore requires AZURE_STORAGE_CONNECTION_STRING");
-    }
-    const service = BlobServiceClient.fromConnectionString(env.AZURE_STORAGE_CONNECTION_STRING);
-    this.container = service.getContainerClient(env.AZURE_STORAGE_CONTAINER_ARTICLES);
+    this.container = getBlobServiceClient().getContainerClient(env.AZURE_STORAGE_CONTAINER_ARTICLES);
   }
 
   private blobPath(id: string): string {
@@ -45,7 +42,8 @@ export class BlobArticleStore implements ArticleStore {
       const download = await blob.download();
       const raw = await streamToString(download.readableStreamBody);
       return JSON.parse(raw) as StoredArticle;
-    } catch {
+    } catch (error) {
+      if (!isBlobNotFound(error)) throw error;
       return null;
     }
   }

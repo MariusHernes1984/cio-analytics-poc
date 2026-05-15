@@ -1,6 +1,7 @@
-import { BlobServiceClient, type ContainerClient } from "@azure/storage-blob";
+import type { ContainerClient } from "@azure/storage-blob";
 import { getEnv } from "@/lib/env";
 import type { AgentId } from "@/lib/agents/types";
+import { getBlobServiceClient, isBlobNotFound } from "@/lib/storage/blobClient";
 import { DEFAULT_PROMPTS, type PromptDraft } from "@/lib/prompts/defaults";
 import {
   formatVersion,
@@ -24,9 +25,8 @@ import {
  * Versions are immutable. Editing = new version. `current.txt` is the only
  * mutable pointer.
  *
- * TODO (migration to managed identity): replace
- * BlobServiceClient.fromConnectionString with
- * `new BlobServiceClient(\`https://\${account}.blob.core.windows.net\`, new DefaultAzureCredential())`.
+ * Uses either AZURE_STORAGE_CONNECTION_STRING or AZURE_STORAGE_ACCOUNT
+ * + managed identity through the shared Blob client helper.
  */
 export class BlobPromptStore implements PromptStore {
   private readonly container: ContainerClient;
@@ -34,11 +34,7 @@ export class BlobPromptStore implements PromptStore {
 
   constructor() {
     const env = getEnv();
-    if (!env.AZURE_STORAGE_CONNECTION_STRING) {
-      throw new Error("BlobPromptStore requires AZURE_STORAGE_CONNECTION_STRING (managed identity path not yet wired)");
-    }
-    const service = BlobServiceClient.fromConnectionString(env.AZURE_STORAGE_CONNECTION_STRING);
-    this.container = service.getContainerClient(env.AZURE_STORAGE_CONTAINER_PROMPTS);
+    this.container = getBlobServiceClient().getContainerClient(env.AZURE_STORAGE_CONTAINER_PROMPTS);
   }
 
   private blobPath(agent: AgentId, version: string): string {
@@ -150,8 +146,8 @@ export class BlobPromptStore implements PromptStore {
         const n = parseVersion(version);
         if (!Number.isNaN(n)) numbers.push(n);
       }
-    } catch {
-      // container missing → return empty
+    } catch (error) {
+      if (!isBlobNotFound(error)) throw error;
     }
     return numbers;
   }
